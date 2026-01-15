@@ -4,7 +4,7 @@
 
 <center>
     <h1 style="color: gold; text-shadow: 2px 2px red;">$$$ SCHUL CASINO $$$</h1>
-    <marquee style="background: black; color: lime;">+++ Erst arbeiten, dann zocken +++ Jackpot bei 7-7-7 +++</marquee>
+    <marquee style="background: black; color: lime;">+++ Erst arbeiten, dann zocken +++ Jackpot bei 7-7-7 +++ Stifte-Verleih jetzt eröffnet +++</marquee>
     <br><br>
 
     <div id="loginBox" style="background: white; color: black; width: 300px; padding: 20px; border: 5px solid gold;">
@@ -16,39 +16,96 @@
         <p id="msgLogin" style="color: red;"></p>
     </div>
 
-    <div id="gameBox" style="display: none; width: 600px;">
+    <div id="gameBox" style="display: none; width: 800px;">
         <h2>Hallo <span id="myName" style="color: gold;"></span>!</h2>
         <div style="background: black; padding: 10px; font-size: 24px; border: 2px solid white;">
             Guthaben: <span id="myMoney" style="color: lime;">0</span> €
         </div>
-        <p id="gameMsg" style="background: yellow; color: red; font-weight: bold; font-size: 18px;"></p>
+        <p id="gameMsg" style="background: yellow; color: red; font-weight: bold; font-size: 18px; min-height: 20px; padding: 5px;"></p>
 
-        <fieldset style="border: 3px solid white; background: #444;">
-            <legend>Job Center</legend>
-            <button onclick="arbeiten()" style="width: 200px; height: 50px; font-size: 18px; cursor: pointer;">
-                🔨 Steine schleppen<br>(+10 bis 20 €)
-            </button>
-        </fieldset>
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <!-- JOB CENTER -->
+            <fieldset style="border: 3px solid white; background: #444; width: 250px;">
+                <legend>Job Center</legend>
+                <button onclick="arbeiten()" style="width: 200px; height: 50px; font-size: 18px; cursor: pointer;">
+                    🔨 Steine schleppen<br>(+10 bis 20 €)
+                </button>
+            </fieldset>
+
+            <!-- BUSINESS -->
+            <fieldset style="border: 3px solid cyan; background: #002; width: 450px;">
+                <legend style="color: cyan;">BUSINESS (Passives Einkommen)</legend>
+                <div style="display: flex; justify-content: space-around;">
+                    <div style="border: 1px solid white; padding: 5px; width: 30%;">
+                        <b>Stifte</b><br>100€ -> 1€/s<br>
+                        <button onclick="kaufen('stift')">KAUFEN</button>
+                        <br>Besitz: <span id="count_stift">0</span>
+                    </div>
+                    <div style="border: 1px solid white; padding: 5px; width: 30%;">
+                        <b>Kiosk</b><br>1000€ -> 15€/s<br>
+                        <button onclick="kaufen('kiosk')">KAUFEN</button>
+                        <br>Besitz: <span id="count_kiosk">0</span>
+                    </div>
+                    <div style="border: 1px solid white; padding: 5px; width: 30%;">
+                        <b>Mafia</b><br>5000€ -> 100€/s<br>
+                        <button onclick="kaufen('mafia')">KAUFEN</button>
+                        <br>Besitz: <span id="count_mafia">0</span>
+                    </div>
+                </div>
+                <br>
+                <button onclick="abholen()" style="width: 100%; height: 30px; background: cyan; color: black; font-weight: bold; cursor: pointer;">Einnahmen abholen</button>
+            </fieldset>
+        </div>
         <br>
 
+        <!-- CASINO -->
         <fieldset style="border: 3px solid gold; background: #220;">
             <legend style="color: gold;">CASINO AREA</legend>
-            
-            <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
-                <b>Münzwurf (Einsatz: 10€ -> Gewinn: 20€)</b><br>
-                <button onclick="spielen('muenze', 10, 'Kopf')">Auf KOPF setzen</button>
-                <button onclick="spielen('muenze', 10, 'Zahl')">Auf ZAHL setzen</button>
+
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+                <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
+                    <b>Münzwurf (Einsatz: 10€ -> 20€)</b><br>
+                    <button onclick="spielen('muenze', 10, 'Kopf')">KOPF</button>
+                    <button onclick="spielen('muenze', 10, 'Zahl')">ZAHL</button>
+                </div>
+
+                <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
+                    <b>Zahl 1-5 (Einsatz: 20€ -> 100€)</b><br>
+                    <input type="number" id="rateZahl" style="width: 40px;" placeholder="?">
+                    <button onclick="spielen('zahl', 20, document.getElementById('rateZahl').value)">RATEN</button>
+                </div>
+
+                <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
+                    <b>🎰 SLOTS (Einsatz: 50€) 🎰</b><br>
+                    <button onclick="spielen('slots', 50, null)" style="background: gold; color: black; font-weight: bold;">SPIN</button>
+                </div>
             </div>
 
-            <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
-                <b>Zahl 1-5 raten (Einsatz: 20€ -> Gewinn: 100€)</b><br>
-                <input type="number" id="rateZahl" style="width: 40px;">
-                <button onclick="spielen('zahl', 20, document.getElementById('rateZahl').value)">RATEN</button>
-            </div>
+            <!-- BLACKJACK AREA -->
+            <div style="border: 3px solid lime; margin: 10px; padding: 10px; background: darkgreen; border-radius: 10px;">
+                <h3 style="margin: 0; color: lime;">♠️ BLACKJACK ♦️</h3>
+                <div id="bj_controls">
+                    Einsatz: <input type="number" id="bj_bet" value="50" style="width: 60px;">
+                    <button onclick="startBJ()" style="background: lime; font-weight: bold; cursor: pointer;">Austeilen</button>
+                </div>
 
-            <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
-                <b>🎰 SLOTS (Einsatz: 50€ -> JACKPOT) 🎰</b><br>
-                <button onclick="spielen('slots', 50, null)" style="background: gold; color: black; font-weight: bold;">SPIN DRÜCKEN</button>
+                <div id="bj_game" style="display: none; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-around;">
+                        <div style="width: 45%;">
+                            <b>DEALER</b>
+                            <div id="dealer_cards" style="font-size: 30px; min-height: 40px;"></div>
+                        </div>
+                        <div style="width: 45%;">
+                            <b>PLAYER (<span id="player_score"></span>)</b>
+                            <div id="player_cards" style="font-size: 30px; min-height: 40px;"></div>
+                        </div>
+                    </div>
+                    <br>
+                    <div id="bj_actions">
+                        <button onclick="hitBJ()" style="background: yellow; color: black; padding: 10px; font-weight: bold; cursor: pointer;">HIT (Karte)</button>
+                        <button onclick="standBJ()" style="background: red; color: white; padding: 10px; font-weight: bold; cursor: pointer;">STAND (Halt)</button>
+                    </div>
+                </div>
             </div>
         </fieldset>
 
@@ -75,9 +132,9 @@
     async function req(data) {
         data.name = uName || document.getElementById("name").value;
         data.pw = uPw || document.getElementById("pw").value;
-        
+
         let r = await fetch("/aktion", {
-            method: "POST", 
+            method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
         });
@@ -87,15 +144,17 @@
     async function auth(typ) {
         let res = await req({befehl: typ});
         if (res.text) document.getElementById("msgLogin").innerText = res.text;
-        
+
         if (res.ok) {
             uName = document.getElementById("name").value;
             uPw = document.getElementById("pw").value;
-            
+
             document.getElementById("loginBox").style.display = "none";
             document.getElementById("gameBox").style.display = "block";
             document.getElementById("myName").innerText = uName;
             updateUI(res);
+            if (res.buildings) updateBuildings(res.buildings);
+            if (res.blackjack) updateBlackjack(res.blackjack);
 
             if (uName === "Admin") document.getElementById("adminPanel").style.display = "block";
         }
@@ -106,10 +165,82 @@
         updateUI(res);
     }
 
+    async function kaufen(item) {
+        let res = await req({befehl: "kaufen", item: item});
+        updateUI(res);
+        if (res.buildings) updateBuildings(res.buildings);
+    }
+
+    async function abholen() {
+        let res = await req({befehl: "abholen"});
+        updateUI(res);
+    }
+
+    function updateBuildings(b) {
+        if(!b) return;
+        document.getElementById("count_stift").innerText = b["stift"] || 0;
+        document.getElementById("count_kiosk").innerText = b["kiosk"] || 0;
+        document.getElementById("count_mafia").innerText = b["mafia"] || 0;
+    }
+
     async function spielen(art, einsatz, tipp) {
         let res = await req({befehl: "spielen", spielArt: art, einsatz: einsatz, tipp: tipp});
         updateUI(res);
     }
+
+    // BLACKJACK CLIENT LOGIC
+    async function startBJ() {
+        let bet = document.getElementById("bj_bet").value;
+        let res = await req({befehl: "bj_start", einsatz: bet});
+        updateUI(res);
+        if(res.blackjack) updateBlackjack(res.blackjack);
+    }
+
+    async function hitBJ() {
+        let res = await req({befehl: "bj_hit"});
+        updateUI(res);
+        if(res.blackjack) updateBlackjack(res.blackjack);
+    }
+
+    async function standBJ() {
+        let res = await req({befehl: "bj_stand"});
+        updateUI(res);
+        if(res.blackjack) updateBlackjack(res.blackjack);
+    }
+
+    function updateBlackjack(state) {
+        if(!state) return;
+        document.getElementById("bj_controls").style.display = "none";
+        document.getElementById("bj_game").style.display = "block";
+
+        // Render Cards
+        renderHand("player_cards", state.player);
+        renderHand("dealer_cards", state.dealer);
+
+        document.getElementById("player_score").innerText = state.score || "?";
+
+        if(state.status === "finished") {
+            document.getElementById("bj_actions").style.display = "none";
+            // Show start button again after delay? Or just reload logic?
+            setTimeout(() => {
+                document.getElementById("bj_game").style.display = "none";
+                document.getElementById("bj_controls").style.display = "block";
+                document.getElementById("bj_actions").style.display = "block"; // reset for next game
+            }, 4000);
+        } else {
+             document.getElementById("bj_actions").style.display = "block";
+        }
+    }
+
+    function renderHand(elementId, hand) {
+        let html = "";
+        for(let c of hand) {
+            let color = (c.suit == "♥" || c.suit == "♦") ? "red" : "white";
+            html += `<span style="color: ${color}; background: black; padding: 2px; border: 1px solid white; border-radius: 4px; margin: 2px;">${c.suit}${c.rank}</span> `;
+        }
+        document.getElementById(elementId).innerHTML = html;
+    }
+
 
     async function cheat() {
         let z = document.getElementById("zielUser").value;
@@ -119,8 +250,8 @@
     }
 
     function updateUI(data) {
-        document.getElementById("myMoney").innerText = data.geld;
-        document.getElementById("liste").innerHTML = data.liste;
+        if(data.geld !== undefined) document.getElementById("myMoney").innerText = data.geld;
+        if(data.liste) document.getElementById("liste").innerHTML = data.liste;
         if(data.text) document.getElementById("gameMsg").innerText = data.text;
     }
 </script>
