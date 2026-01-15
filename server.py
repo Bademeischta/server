@@ -462,14 +462,10 @@ def blackjack():
         d_score = calc_hand(state["dealer"])
 
         win_amount = 0
-        if d_score > 21 or p_score > d_score:
+        if d_score > 21 or p_score >= d_score:
             state["status"] = "win"
             state["msg"] = "Gewonnen!"
             win_amount = state["bet"] * 2
-        elif p_score == d_score:
-            state["status"] = "push"
-            state["msg"] = "Unentschieden."
-            win_amount = state["bet"]
         else:
             state["status"] = "lose"
             state["msg"] = "Bank gewinnt."
