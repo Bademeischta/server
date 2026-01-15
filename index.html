@@ -3,790 +3,797 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCHUL CASINO ROYAL</title>
+    <title>NEON SCHOOL CASINO</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0a0b10;
-            --panel-bg: #14151f;
-            --accent: #00ff9d;
-            --accent-dim: #00cc7a;
-            --danger: #ff0055;
-            --warning: #ffcc00;
-            --text-main: #ffffff;
-            --text-muted: #8892b0;
-            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --bg-dark: #050505;
+            --bg-panel: #111116;
+            --accent-neon: #00ffcc;
+            --accent-pink: #ff0077;
+            --accent-purple: #9d00ff;
+            --text-main: #eeeeee;
+            --text-muted: #888888;
+            --border: #222;
+            --font-head: 'Orbitron', sans-serif;
+            --font-body: 'Roboto', sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-dark);
             color: var(--text-main);
-            font-family: var(--font-main);
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
+            font-family: var(--font-body);
+            margin: 0; padding: 0;
+            overflow: hidden; /* App container handles scroll */
         }
+
+        * { box-sizing: border-box; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-neon); }
 
         /* UTILS */
         .hidden { display: none !important; }
         .flex { display: flex; }
-        .grid { display: grid; }
+        .col { flex-direction: column; }
         .center { display: flex; justify-content: center; align-items: center; }
+        .gap-10 { gap: 10px; }
+        .w-full { width: 100%; }
+        .text-neon { color: var(--accent-neon); text-shadow: 0 0 5px rgba(0,255,204,0.5); }
+        .text-pink { color: var(--accent-pink); text-shadow: 0 0 5px rgba(255,0,119,0.5); }
+
+        /* BUTTONS */
         .btn {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: 0.2s;
+            background: linear-gradient(45deg, #111, #222);
+            border: 1px solid var(--accent-neon);
+            color: var(--accent-neon);
+            padding: 10px 15px;
+            font-family: var(--font-head);
+            font-size: 12px;
             text-transform: uppercase;
-            font-size: 14px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 0 5px rgba(0,255,204,0.1);
         }
-        .btn:hover { background: var(--accent-dim); transform: translateY(-2px); }
-        .btn:disabled { background: #555; cursor: not-allowed; transform: none; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { background: #cc0044; }
-        .btn-warn { background: var(--warning); color: black; }
+        .btn:hover {
+            background: var(--accent-neon);
+            color: #000;
+            box-shadow: 0 0 15px var(--accent-neon);
+        }
+        .btn:disabled { border-color: #444; color: #666; cursor: not-allowed; box-shadow: none; background: #111; }
+
+        .btn-pink { border-color: var(--accent-pink); color: var(--accent-pink); box-shadow: 0 0 5px rgba(255,0,119,0.1); }
+        .btn-pink:hover { background: var(--accent-pink); color: white; box-shadow: 0 0 15px var(--accent-pink); }
 
         input, select {
-            background: #222;
-            border: 1px solid #444;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 10px;
+            background: #0a0a0a; border: 1px solid #333; color: white; padding: 10px;
+            font-family: var(--font-body); outline: none; transition: 0.3s; width: 100%;
         }
+        input:focus { border-color: var(--accent-neon); box-shadow: 0 0 5px rgba(0,255,204,0.3); }
 
         /* LOGIN */
-        #login-screen {
+        #login-overlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
-            background: var(--bg-color);
-            z-index: 1000;
+            background: black; z-index: 9999;
+            background-image: radial-gradient(circle at center, #111 0%, #000 70%);
         }
         .login-box {
-            background: var(--panel-bg);
-            padding: 40px;
-            border-radius: 10px;
-            border: 1px solid #333;
-            width: 300px;
+            width: 350px; padding: 40px; background: rgba(20,20,20,0.9);
+            border: 1px solid var(--accent-neon);
+            box-shadow: 0 0 30px rgba(0,255,204,0.1);
             text-align: center;
-            box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
         }
-        .login-box h1 { color: var(--accent); margin-bottom: 30px; }
+        .login-box h1 { font-family: var(--font-head); color: var(--accent-neon); margin-bottom: 30px; letter-spacing: 2px; }
 
-        /* DASHBOARD GRID */
-        #app-container {
-            display: grid;
-            grid-template-columns: 250px 1fr 300px; /* Sidebar, Main, Social */
-            height: 100vh;
-        }
+        /* LAYOUT */
+        #app { display: grid; grid-template-columns: 260px 1fr 300px; height: 100vh; }
 
         /* SIDEBAR */
         .sidebar {
-            background: var(--panel-bg);
-            border-right: 1px solid #333;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+            background: var(--bg-panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 20px;
         }
-        .profile-card {
-            background: #1f212e;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            border: 1px solid #333;
+        .profile {
+            text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
         }
-        .profile-pic { font-size: 40px; margin-bottom: 10px; }
-        .money-display { font-size: 24px; color: var(--accent); font-weight: bold; margin: 10px 0; }
-        .level-bar-bg { background: #333; height: 5px; border-radius: 5px; overflow: hidden; }
-        .level-bar-fill { background: var(--warning); height: 100%; width: 0%; transition: width 0.5s; }
+        .avatar { font-size: 50px; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0% {transform:translateY(0);} 50% {transform:translateY(-10px);} 100% {transform:translateY(0);} }
 
-        .nav-btn {
-            background: transparent;
-            color: var(--text-muted);
-            text-align: left;
-            padding: 15px;
-            margin-bottom: 5px;
-            border: 1px solid transparent;
+        .money { font-family: var(--font-head); font-size: 22px; color: var(--accent-neon); margin: 5px 0; }
+        .xp-bar-bg { background: #222; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; position: relative; }
+        .xp-bar-fill { background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink)); height: 100%; width: 0%; transition: width 0.5s; }
+
+        .menu-btn {
+            background: transparent; border: none; color: var(--text-muted);
+            text-align: left; padding: 12px; margin: 2px 0; font-family: var(--font-head);
+            cursor: pointer; transition: 0.2s; border-left: 2px solid transparent;
         }
-        .nav-btn:hover, .nav-btn.active {
-            background: rgba(0, 255, 157, 0.1);
-            color: var(--accent);
-            border-left: 3px solid var(--accent);
+        .menu-btn:hover, .menu-btn.active {
+            color: white; border-left-color: var(--accent-pink);
+            background: linear-gradient(90deg, rgba(255,0,119,0.1), transparent);
         }
+
+        /* INVENTORY MINI */
+        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .inv-item {
+            background: #222; border: 1px solid #333; aspect-ratio: 1;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 14px; cursor: pointer; position: relative;
+        }
+        .inv-item:hover { border-color: var(--accent-neon); }
+        .inv-count { position: absolute; bottom: 0; right: 2px; font-size: 9px; color: white; }
 
         /* MAIN CONTENT */
-        .main-content {
-            padding: 30px;
-            overflow-y: auto;
-        }
-        .section-title { font-size: 28px; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .main { padding: 20px; overflow-y: auto; background-image: radial-gradient(circle at 50% 50%, #0a0a0e 0%, #000 100%); }
+        .page-title { font-family: var(--font-head); font-size: 28px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; color: white; }
 
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card {
-            background: var(--panel-bg);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-            transition: 0.3s;
-            position: relative;
-            overflow: hidden;
+            background: rgba(20,20,25,0.8); border: 1px solid #333; padding: 20px;
+            transition: 0.3s; position: relative; backdrop-filter: blur(5px);
         }
-        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .card h3 { margin-top: 0; color: var(--text-main); }
-        .card p { color: var(--text-muted); font-size: 14px; }
-        .card .cost { position: absolute; top: 10px; right: 10px; font-weight: bold; color: var(--warning); }
+        .card:hover { border-color: var(--accent-neon); transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .card h3 { margin-top: 0; color: white; font-family: var(--font-head); font-size: 16px; }
+        .card .badge { position: absolute; top: 10px; right: 10px; font-size: 11px; padding: 2px 6px; background: #222; border: 1px solid #444; color: var(--accent-neon); }
 
-        /* RIGHT PANEL (SOCIAL) */
-        .right-panel {
-            background: var(--panel-bg);
-            border-left: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-        }
-        .stock-ticker {
-            background: #111; padding: 10px; font-size: 14px;
-            border-bottom: 1px solid #333; display: flex; justify-content: space-between;
-        }
-        .chat-box { flex: 1; padding: 10px; overflow-y: auto; font-size: 13px; }
-        .chat-msg { margin-bottom: 8px; line-height: 1.4; }
-        .chat-msg .time { color: #555; font-size: 10px; margin-right: 5px; }
-        .chat-msg .user { font-weight: bold; color: var(--accent); }
-        .chat-input { padding: 10px; border-top: 1px solid #333; }
+        /* SOCIAL PANEL */
+        .social { background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .chat-container { flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; }
+        .chat-msg { margin-bottom: 6px; word-wrap: break-word; }
+        .chat-time { color: #444; font-size: 10px; margin-right: 5px; }
+        .chat-user { color: var(--accent-neon); font-weight: bold; cursor: pointer; }
+        .chat-input-area { padding: 10px; border-top: 1px solid #333; display: flex; }
 
-        /* GAME SPECIFIC CSS */
-        /* BLACKJACK */
-        .bj-table { background: #0e3b1c; padding: 20px; border-radius: 10px; border: 5px solid #1a5c2e; text-align: center; min-height: 300px; }
-        .cards-area { min-height: 100px; display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
-        .playing-card {
-            background: white; color: black; width: 60px; height: 90px;
-            border-radius: 5px; display: flex; justify-content: center; align-items: center;
-            font-size: 24px; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        /* TOASTS */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: rgba(0,0,0,0.9); border-left: 4px solid var(--accent-neon);
+            padding: 15px 20px; color: white; width: 300px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease-out; font-size: 14px;
         }
-        .playing-card.red { color: red; }
+        .toast.error { border-color: var(--accent-pink); }
+        @keyframes slideIn { from {transform: translateX(100%); opacity: 0;} to {transform: translateX(0); opacity: 1;} }
 
-        /* ROULETTE */
-        .roulette-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; max-width: 300px; margin: auto; }
-        .r-num { background: #333; padding: 10px; color: white; cursor: pointer; border-radius: 3px; }
-        .r-num.red { background: #d00; }
-        .r-num.black { background: #222; }
-        .r-num.green { background: #080; grid-column: span 3; }
-        .r-num:hover { opacity: 0.8; }
-        .r-num.selected { border: 2px solid gold; }
-
-        /* CRASH */
-        .crash-graph {
-            height: 200px; background: #222; position: relative; border-left: 2px solid white; border-bottom: 2px solid white;
-            display: flex; align-items: flex-end; overflow: hidden;
+        /* MOBILE */
+        @media (max-width: 800px) {
+            #app { display: block; height: auto; }
+            .sidebar { border-right: none; border-bottom: 1px solid #333; }
+            .social { height: 400px; border-left: none; border-top: 1px solid #333; }
+            .main { min-height: 500px; }
         }
-        .crash-line { background: var(--danger); width: 2px; height: 0%; transition: 0.1s linear; position: absolute; left: 0; }
-        .crash-val { font-size: 60px; font-weight: bold; color: var(--text-main); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        /* GAME SPECIFICS */
+        .bj-table { background: #0b1e11; border: 2px solid #1a4d2e; padding: 20px; text-align: center; border-radius: 8px; }
+        .card-visual {
+            display: inline-flex; width: 50px; height: 70px; background: white; color: black;
+            border-radius: 4px; justify-content: center; align-items: center; font-weight: bold;
+            margin: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); font-size: 18px;
+        }
+        .card-visual.red { color: #d00; }
+
+        .stock-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-left: 3px solid #333; }
+        .stock-up { border-left-color: lime; }
+        .stock-down { border-left-color: red; }
+
+        .crash-canvas { width: 100%; height: 200px; background: #111; position: relative; border-bottom: 1px solid #333; border-left: 1px solid #333; }
+        .rocket { position: absolute; transition: bottom 0.1s, left 0.1s; font-size: 20px; }
 
         /* MODAL */
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 2000; }
-        .modal { background: var(--panel-bg); width: 400px; padding: 20px; border-radius: 10px; border: 1px solid var(--accent); }
-        .modal-body { margin: 20px 0; }
-
-        /* ANIMATIONS */
-        @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .pop { animation: pop 0.3s ease-out; }
-
+        #modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 5000; backdrop-filter: blur(2px); }
+        .modal { background: #151515; width: 90%; max-width: 400px; border: 1px solid var(--accent-purple); padding: 20px; box-shadow: 0 0 30px rgba(157,0,255,0.2); }
     </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen" class="center">
+<!-- TOASTS -->
+<div id="toast-container"></div>
+
+<!-- LOGIN -->
+<div id="login-overlay" class="center">
     <div class="login-box">
-        <h1>SCHUL CASINO <span style="font-size: 12px; color: #555;">ROYAL</span></h1>
-        <input type="text" id="l-name" placeholder="Dein Name">
-        <input type="password" id="l-pw" placeholder="Passwort">
-        <div class="flex" style="gap: 10px;">
-            <button class="btn" style="flex:1" onclick="auth('login')">Login</button>
-            <button class="btn btn-warn" style="flex:1" onclick="auth('register')">Neu</button>
+        <h1>NEON SCHOOL</h1>
+        <input type="text" id="l-name" placeholder="Dein Name" maxlength="15">
+        <input type="password" id="l-pw" placeholder="Passwort" style="margin-top: 10px;">
+        <div class="flex gap-10" style="margin-top: 20px;">
+            <button class="btn w-full" onclick="doAuth('login')">Login</button>
+            <button class="btn btn-pink w-full" onclick="doAuth('register')">Neu</button>
         </div>
-        <p id="l-msg" style="color: var(--danger); margin-top: 10px;"></p>
+        <p id="l-msg" style="color: var(--accent-pink); margin-top: 10px; font-size: 12px;"></p>
     </div>
 </div>
 
 <!-- APP -->
-<div id="app-container" class="hidden">
-
-    <!-- LEFT SIDEBAR -->
+<div id="app" class="hidden">
+    <!-- SIDEBAR -->
     <div class="sidebar">
-        <div class="profile-card">
-            <div class="profile-pic">😎</div>
-            <div id="u-name" style="font-weight: bold;">Spieler</div>
-            <div class="money-display"><span id="u-money">0</span> €</div>
-            <div style="font-size: 12px; color: #aaa; margin-top: 5px;">Level <span id="u-level">1</span></div>
-            <div class="level-bar-bg" style="margin-top: 5px;">
-                <div class="level-bar-fill" id="u-xp-bar"></div>
+        <div class="profile">
+            <div class="avatar">😎</div>
+            <div id="u-name" style="font-weight: bold; font-family: var(--font-head);">Spieler</div>
+            <div class="money"><span id="u-money">0</span> €</div>
+            <div style="font-size: 11px; color: #888;">Lvl <span id="u-level">1</span></div>
+            <div class="xp-bar-bg">
+                <div class="xp-bar-fill" id="u-xp"></div>
             </div>
-            <div id="u-inventory" style="margin-top: 10px; font-size: 10px; color: #666; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
-                <!-- Icons for inventory -->
-            </div>
+
+            <!-- DAILY BONUS BTN -->
+            <button id="btn-daily" class="btn btn-pink w-full hidden" style="margin-top: 10px;" onclick="claimDaily()">🎁 Bonus</button>
         </div>
 
-        <button class="nav-btn active" onclick="nav('dashboard')">🏠 Dashboard</button>
-        <button class="nav-btn" onclick="nav('work')">💼 Karriere</button>
-        <button class="nav-btn" onclick="nav('crime')">🕵️ Illegal</button>
-        <button class="nav-btn" onclick="nav('shop')">🛒 Shop</button>
-        <button class="nav-btn" onclick="nav('casino')">🎲 Casino</button>
-        <button class="nav-btn" onclick="nav('market')">📈 Börse</button>
-        <div style="flex:1"></div>
-        <button class="nav-btn btn-danger" onclick="logout()">Logout</button>
+        <nav>
+            <button class="menu-btn w-full active" onclick="nav('dash')">🏠 Dashboard</button>
+            <button class="menu-btn w-full" onclick="nav('jobs')">💼 Jobs</button>
+            <button class="menu-btn w-full" onclick="nav('crime')">🕵️ Illegal</button>
+            <button class="menu-btn w-full" onclick="nav('market')">📈 Börse</button>
+            <button class="menu-btn w-full" onclick="nav('casino')">🎰 Casino</button>
+            <button class="menu-btn w-full" onclick="nav('shop')">🛒 Shop</button>
+        </nav>
+
+        <div style="margin-top: auto; padding-top: 20px;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">INVENTAR (Klick = Benutzen)</div>
+            <div class="inv-grid" id="u-inv">
+                <!-- Items -->
+            </div>
+            <button class="btn btn-pink w-full" style="margin-top: 20px;" onclick="location.reload()">Logout</button>
+        </div>
     </div>
 
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
+    <!-- MAIN -->
+    <div class="main">
 
-        <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="view">
-            <h2 class="section-title">Übersicht</h2>
-            <div class="card-grid">
+        <!-- DASHBOARD -->
+        <div id="view-dash" class="view">
+            <h2 class="page-title">Dashboard</h2>
+            <div class="grid-cards">
                 <div class="card">
-                    <h3>Statistik</h3>
-                    <p>Wins: <span id="d-wins">0</span></p>
-                    <p>Status: <span id="d-status" style="color: lime;">Frei</span></p>
+                    <h3>Status</h3>
+                    <p style="color: #aaa; font-size: 14px;">Aktueller Status deiner Akte.</p>
+                    <div id="d-status" style="font-size: 20px; color: lime; margin-top: 10px;">Frei</div>
+                    <div id="d-jail-timer" style="font-size: 12px; color: red;"></div>
                 </div>
                 <div class="card">
-                    <h3>Aktien-Depot</h3>
-                    <p>Besitz: <span id="d-stocks">0</span> Coins</p>
-                    <p>Wert: <span id="d-stock-val">0</span> €</p>
+                    <h3>Aktien-Portfolio</h3>
+                    <div id="d-portfolio" style="margin-top: 10px; font-size: 14px;">Keine Aktien.</div>
                 </div>
             </div>
-            <br>
-            <h2 class="section-title">Top Spieler</h2>
-            <table style="width: 100%; border-collapse: collapse; color: #ccc;">
-                <thead><tr style="text-align: left; border-bottom: 1px solid #444;"><th>Name</th><th>Level</th><th>Geld</th></tr></thead>
-                <tbody id="leaderboard-body"></tbody>
+
+            <h3 style="margin-top: 30px; border-bottom: 1px solid #333; padding-bottom: 10px; font-family: var(--font-head);">Top 10 Rich List</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tbody id="leaderboard"></tbody>
             </table>
         </div>
 
-        <!-- WORK VIEW -->
-        <div id="view-work" class="view hidden">
-            <h2 class="section-title">Karriere & Jobs</h2>
-            <div class="card-grid" id="jobs-container">
-                <!-- Filled by JS -->
-            </div>
+        <!-- JOBS -->
+        <div id="view-jobs" class="view hidden">
+            <h2 class="page-title">Karriereleiter</h2>
+            <div class="grid-cards" id="job-list"></div>
         </div>
 
-        <!-- CRIME VIEW -->
+        <!-- CRIME -->
         <div id="view-crime" class="view hidden">
-            <h2 class="section-title">Illegale Aktivitäten</h2>
-            <div class="card-grid">
-                <div class="card" style="border-color: var(--danger);">
-                    <h3>Banküberfall</h3>
-                    <p>Hohes Risiko, Hoher Gewinn.</p>
-                    <p class="cost">Chance: 30%</p>
-                    <br>
-                    <button class="btn btn-danger" onclick="doCrime('bank')">Bank überfallen</button>
+            <h2 class="page-title">Untergrund</h2>
+            <div class="grid-cards">
+                <div class="card" style="border-color: #555;">
+                    <span class="badge">EASY</span>
+                    <h3>Pausenhof-Diebstahl</h3>
+                    <p style="font-size: 12px; color: #888;">Risiko: Gering | Beute: Klein</p>
+                    <button class="btn w-full" style="margin-top: 10px;" onclick="doCrime('steal')">Klauen</button>
                 </div>
                 <div class="card" style="border-color: orange;">
-                    <h3>System hacken</h3>
-                    <p>Mittleres Risiko.</p>
-                    <p class="cost">Chance: 50%</p>
-                    <br>
-                    <button class="btn btn-warn" onclick="doCrime('hack')">Hacken</button>
+                    <span class="badge">MEDIUM</span>
+                    <h3>Server Hacken</h3>
+                    <p style="font-size: 12px; color: #888;">Risiko: Mittel | Beute: Mittel</p>
+                    <button class="btn btn-pink w-full" style="margin-top: 10px;" onclick="doCrime('hack')">Hacken</button>
+                </div>
+                <div class="card" style="border-color: red;">
+                    <span class="badge">HARD</span>
+                    <h3>Banküberfall</h3>
+                    <p style="font-size: 12px; color: #888;">Risiko: Hoch | Beute: Riesig</p>
+                    <button class="btn btn-pink w-full" style="margin-top: 10px;" onclick="doCrime('bank')">Überfallen</button>
                 </div>
             </div>
         </div>
 
-        <!-- SHOP VIEW -->
-        <div id="view-shop" class="view hidden">
-            <h2 class="section-title">Schwarzmarkt</h2>
-            <div class="card-grid" id="shop-container">
-                <!-- Filled by JS -->
-            </div>
+        <!-- MARKET -->
+        <div id="view-market" class="view hidden">
+            <h2 class="page-title">Schul-Börse</h2>
+            <div id="market-list"></div>
         </div>
 
-        <!-- CASINO VIEW -->
-        <div id="view-casino" class="view hidden">
-            <h2 class="section-title">Casino Royale</h2>
+        <!-- SHOP -->
+        <div id="view-shop" class="view hidden">
+            <h2 class="page-title">Schwarzmarkt</h2>
+            <div class="grid-cards" id="shop-list"></div>
+        </div>
 
-            <!-- TABS -->
-            <div class="flex" style="gap: 10px; margin-bottom: 20px;">
-                <button class="btn" onclick="showGame('blackjack')">Blackjack</button>
-                <button class="btn" onclick="showGame('roulette')">Roulette</button>
-                <button class="btn btn-danger" onclick="showGame('crash')">CRASH 🚀</button>
+        <!-- CASINO -->
+        <div id="view-casino" class="view hidden">
+            <h2 class="page-title">Casino Royale</h2>
+            <div class="flex gap-10" style="margin-bottom: 20px;">
+                <button class="btn" onclick="showGame('bj')">Blackjack</button>
+                <button class="btn" onclick="showGame('rou')">Roulette</button>
+                <button class="btn btn-pink" onclick="showGame('crash')">CRASH</button>
             </div>
 
-            <!-- BLACKJACK UI -->
-            <div id="game-blackjack" class="game-ui hidden">
+            <!-- BJ -->
+            <div id="game-bj" class="game-ui hidden">
                 <div class="bj-table">
-                    <div style="color: #aaa;">DEALER</div>
-                    <div id="bj-dealer-cards" class="cards-area"></div>
-                    <div style="color: #aaa;">PLAYER (<span id="bj-score">0</span>)</div>
-                    <div id="bj-player-cards" class="cards-area"></div>
+                    <div style="color: #666; font-size: 12px;">DEALER</div>
+                    <div id="bj-dealer" style="min-height: 80px;"></div>
+                    <div style="color: #666; font-size: 12px; margin-top: 20px;">YOU</div>
+                    <div id="bj-player" style="min-height: 80px;"></div>
 
-                    <div id="bj-controls-start">
-                        <input type="number" id="bj-bet" value="50" style="width: 100px;">
+                    <div id="bj-msg" style="margin: 15px 0; font-family: var(--font-head); font-size: 18px;"></div>
+
+                    <div id="bj-ctrl-start">
+                        <input type="number" id="bj-bet" value="50" style="width: 100px; text-align: center;">
                         <button class="btn" onclick="bjAction('start')">Deal</button>
                     </div>
-                    <div id="bj-controls-play" class="hidden">
-                        <button class="btn btn-warn" onclick="bjAction('hit')">HIT</button>
+                    <div id="bj-ctrl-play" class="hidden flex gap-10 center">
+                        <button class="btn" onclick="bjAction('hit')">HIT</button>
                         <button class="btn" onclick="bjAction('stand')">STAND</button>
+                        <button class="btn btn-pink" onclick="bjAction('double')">DOUBLE</button>
                     </div>
-                    <div id="bj-msg" style="margin-top: 10px; font-weight: bold; font-size: 20px;"></div>
                 </div>
             </div>
 
-            <!-- ROULETTE UI -->
-            <div id="game-roulette" class="game-ui hidden">
-                <div class="flex" style="gap: 20px; align-items: flex-start;">
-                    <div class="roulette-board">
-                        <div class="r-num green" onclick="setRouletteBet('number', 0)">0</div>
-                        <!-- Generated via JS for 1-36 -->
-                        <div id="roulette-nums" style="display: contents;"></div>
+            <!-- ROULETTE -->
+            <div id="game-rou" class="game-ui hidden">
+                <div class="grid-cards" style="grid-template-columns: 2fr 1fr;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
+                        <div class="btn" style="grid-column: span 3; background: #050;" onclick="rouSel('number', 0)">0</div>
+                        <div id="rou-grid" style="display: contents;"></div>
                     </div>
-                    <div style="width: 200px;">
-                        <h3>Einsatz</h3>
-                        <input type="number" id="r-bet" value="50">
-                        <div style="border: 1px solid #444; padding: 10px; margin-bottom: 10px;">
-                            Gewählt: <span id="r-selection" style="color: var(--accent);">Nichts</span>
+                    <div>
+                        <h4 style="margin-top: 0;">Einsatz</h4>
+                        <input type="number" id="rou-bet" value="50">
+                        <div style="margin: 10px 0; font-size: 12px; color: var(--accent-neon);">Wahl: <span id="rou-choice">-</span></div>
+                        <button class="btn w-full" onclick="rouSpin()">SPIN</button>
+                        <hr style="border-color: #333; margin: 15px 0;">
+                        <div class="flex gap-10">
+                            <button class="btn w-full" style="background: #500; border:none;" onclick="rouSel('color','red')">RED</button>
+                            <button class="btn w-full" style="background: #111; border:none;" onclick="rouSel('color','black')">BLK</button>
                         </div>
-                        <button class="btn" onclick="spinRoulette()">SPIN</button>
-                        <hr>
-                        <h4>Quick Bets</h4>
-                        <button class="btn btn-danger" style="width: 45%;" onclick="setRouletteBet('color', 'red')">🔴 Rot</button>
-                        <button class="btn" style="width: 45%; background: #333;" onclick="setRouletteBet('color', 'black')">⚫ Schwarz</button>
-                        <div style="margin-top: 5px;">
-                            <button class="btn" style="width: 30%; font-size: 10px;" onclick="setRouletteBet('dozen', '1-12')">1-12</button>
-                            <button class="btn" style="width: 30%; font-size: 10px;" onclick="setRouletteBet('dozen', '13-24')">13-24</button>
-                            <button class="btn" style="width: 30%; font-size: 10px;" onclick="setRouletteBet('dozen', '25-36')">25-36</button>
+                        <div class="flex gap-10" style="margin-top: 5px;">
+                            <button class="btn w-full" onclick="rouSel('parity','even')">EVEN</button>
+                            <button class="btn w-full" onclick="rouSel('parity','odd')">ODD</button>
                         </div>
                     </div>
                 </div>
-                <div id="r-result" style="text-align: center; font-size: 24px; margin-top: 20px; font-weight: bold;"></div>
             </div>
 
-            <!-- CRASH UI -->
+            <!-- CRASH -->
             <div id="game-crash" class="game-ui hidden">
-                <div class="crash-graph">
-                    <div class="crash-val" id="crash-display">1.00x</div>
-                    <div class="crash-line" id="crash-line"></div>
+                <div class="crash-canvas center" id="crash-box">
+                    <div id="crash-val" style="font-size: 40px; font-family: var(--font-head); z-index: 10;">1.00x</div>
+                    <div id="rocket" class="rocket">🚀</div>
                 </div>
-                <div style="margin-top: 20px; text-align: center;">
-                    <div id="crash-controls-start">
-                        Einsatz: <input type="number" id="crash-bet" value="100" style="width: 100px;">
-                        <button class="btn btn-danger" onclick="startCrash()">START ROCKET</button>
+                <div class="center gap-10" style="margin-top: 20px;">
+                    <div id="crash-start">
+                        <input type="number" id="crash-bet" value="100" style="width: 100px;">
+                        <button class="btn btn-pink" onclick="crashStart()">LAUNCH</button>
                     </div>
-                    <div id="crash-controls-cashout" class="hidden">
-                        <button class="btn btn-warn" style="width: 200px; height: 50px; font-size: 20px;" onclick="cashoutCrash()">CASHOUT</button>
-                    </div>
-                    <div id="crash-msg"></div>
+                    <button id="crash-out" class="btn hidden" onclick="crashOut()">CASHOUT</button>
                 </div>
-            </div>
-
-        </div>
-
-        <!-- MARKET VIEW -->
-        <div id="view-market" class="view hidden">
-            <h2 class="section-title">Aktienmarkt: Schul-Coin</h2>
-            <div style="font-size: 40px; color: var(--accent); margin-bottom: 20px;">
-                <span id="market-price">100.00</span> €
-            </div>
-            <div class="flex" style="gap: 20px;">
-                <div class="card" style="flex:1">
-                    <h3>Kaufen</h3>
-                    <input type="number" id="buy-amt" placeholder="Menge">
-                    <button class="btn" onclick="tradeStock('buy')">Kaufen</button>
-                </div>
-                <div class="card" style="flex:1; border-color: var(--danger);">
-                    <h3>Verkaufen</h3>
-                    <input type="number" id="sell-amt" placeholder="Menge">
-                    <button class="btn btn-danger" onclick="tradeStock('sell')">Verkaufen</button>
-                </div>
+                <div id="crash-res" style="text-align: center; margin-top: 10px; font-weight: bold;"></div>
             </div>
         </div>
 
     </div>
 
-    <!-- RIGHT SOCIAL -->
-    <div class="right-panel">
-        <div class="stock-ticker">
-            <span>SC: <span id="ticker-price">100</span>€</span>
-            <span style="color: #666;">LIVE</span>
+    <!-- SOCIAL -->
+    <div class="social">
+        <div style="padding: 10px; border-bottom: 1px solid #333; font-size: 12px; color: #888;">
+            <span id="online-count" style="color: lime;">0</span> User Online
         </div>
-        <div class="chat-box" id="chat-box">
-            <!-- Messages -->
-        </div>
-        <div class="chat-input flex">
-            <input type="text" id="chat-msg" placeholder="Nachricht..." style="margin: 0; border-radius: 0;">
+        <div class="chat-container" id="chat-box"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-in" placeholder="Nachricht..." style="border-radius: 0;">
             <button class="btn" style="border-radius: 0;" onclick="sendChat()">➤</button>
         </div>
-        <div style="padding: 10px; background: #111; border-top: 1px solid #333;">
-            <h4 style="margin: 0 0 10px 0; color: var(--accent);">Geld senden</h4>
-            <input type="text" id="trans-user" placeholder="Spielername">
-            <input type="number" id="trans-amt" placeholder="Betrag">
-            <button class="btn" style="width: 100%; font-size: 12px;" onclick="transferMoney()">Senden</button>
+        <div style="padding: 10px; border-top: 1px solid #333;">
+            <div style="font-size: 10px; color: #666; margin-bottom: 5px;">GELD SENDEN</div>
+            <div class="flex gap-10">
+                <input type="text" id="tx-user" placeholder="Name" style="flex:1">
+                <input type="number" id="tx-amt" placeholder="€" style="width: 60px;">
+                <button class="btn" onclick="doTransfer()">OK</button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- POPUP MODAL -->
-<div id="modal" class="modal-overlay center hidden" onclick="closeModal(event)">
+<!-- MODAL -->
+<div id="modal-overlay" class="center hidden" onclick="closeModal(event)">
     <div class="modal">
-        <h2 id="m-title" style="margin-top: 0; color: var(--accent);">Info</h2>
-        <div id="m-body" class="modal-body">Text</div>
-        <button class="btn" onclick="closeModal('force')">OK</button>
+        <h3 id="m-title" style="margin-top: 0; color: var(--accent-neon);">Info</h3>
+        <p id="m-body" style="color: #ccc; font-size: 14px;"></p>
+        <button class="btn w-full" style="margin-top: 20px;" onclick="closeModal('force')">OK</button>
     </div>
 </div>
 
 <script>
-// --- CONFIG ---
-const JOBS = {
-    "tellerwaescher": {name: "Tellerwäscher", req: 1, sal: 15, cd: 10},
-    "zeitung": {name: "Zeitungsjunge", req: 3, sal: 40, cd: 30},
-    "informatiker": {name: "Informatiker", req: 5, sal: 120, cd: 60},
-    "bankier": {name: "Bankier", req: 10, sal: 500, cd: 120}
-};
-const ITEMS = {
-    "glücksbringer": {name: "Hasenpfote", price: 500},
-    "laptop": {name: "Hacker-Laptop", price: 2000},
-    "anwalt": {name: "Guter Anwalt", price: 5000}
-};
+// --- GLOBALS ---
+let user = { name: null, pw: null };
+let data = {};
+let crashTimer = null;
+let rouSelection = null;
 
-let currentUser = { name: null, pw: null };
-let appData = {};
-let crashInterval = null;
-
-// --- CORE ---
-async function api(endpoint, payload) {
-    if(currentUser.name) {
-        payload.name = currentUser.name;
-        payload.pw = currentUser.pw;
-    }
+// --- AUTH & INIT ---
+async function api(path, payload={}) {
+    if(user.name) { payload.name = user.name; payload.pw = user.pw; }
     try {
-        let r = await fetch("/api/" + endpoint, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload)
+        let r = await fetch('/api/'+path, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
         });
         return await r.json();
-    } catch(e) {
-        console.error(e);
-        return {ok: false, msg: "Verbindungsfehler"};
-    }
+    } catch(e) { return {ok: false, msg: "Server Error"}; }
 }
 
-async function auth(type) {
-    let n = document.getElementById("l-name").value;
-    let p = document.getElementById("l-pw").value;
+async function doAuth(type) {
+    let n = document.getElementById('l-name').value;
+    let p = document.getElementById('l-pw').value;
     if(!n || !p) return;
 
-    let res = await api("auth", {cmd: type, name: n, pw: p});
+    let res = await api('auth', {cmd: type, name: n, pw: p});
     if(res.ok) {
-        currentUser = {name: n, pw: p};
-        document.getElementById("login-screen").classList.add("hidden");
-        document.getElementById("app-container").classList.remove("hidden");
-        initApp();
+        user = {name: n, pw: p};
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        init();
     } else {
-        document.getElementById("l-msg").innerText = res.msg;
+        document.getElementById('l-msg').innerText = res.msg;
     }
 }
 
-function nav(viewId) {
-    document.querySelectorAll('.view').forEach(e => e.classList.add('hidden'));
-    document.getElementById('view-' + viewId).classList.remove('hidden');
+function init() {
+    // Generate Roulette Grid
+    let g = document.getElementById('rou-grid');
+    for(let i=1; i<=36; i++) {
+        let c = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? '#a00' : '#111';
+        g.innerHTML += `<div class="btn" style="background:${c}; border:none; padding:10px 0;" onclick="rouSel('number', ${i})">${i}</div>`;
+    }
 
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    refresh();
+    setInterval(refresh, 2000);
 }
 
-function logout() { location.reload(); }
+// --- CORE LOOP ---
+async function refresh() {
+    let res = await api('data');
+    if(!res.ok) return;
+    data = res;
 
-// --- DATA LOOP ---
-async function initApp() {
-    setupRoulette();
-    renderJobs();
-    renderShop();
+    // Sidebar
+    document.getElementById('u-name').innerText = user.name;
+    document.getElementById('u-money').innerText = res.user.geld;
+    document.getElementById('u-level').innerText = res.user.level;
+    document.getElementById('u-xp').style.width = ((res.user.xp / res.user.xp_next)*100) + '%';
+    document.getElementById('online-count').innerText = res.online_count;
 
-    setInterval(refreshData, 2000); // Poll every 2s
-    refreshData();
-}
-
-async function refreshData() {
-    let res = await api("data", {});
-    if(!res.ok) return; // session invalid?
-
-    appData = res;
-
-    // Update Sidebar
-    document.getElementById("u-name").innerText = currentUser.name;
-    document.getElementById("u-money").innerText = res.user.geld;
-    document.getElementById("u-level").innerText = res.user.level;
-    document.getElementById("u-xp-bar").style.width = (res.user.xp % (res.user.level*100) / (res.user.level*100) * 100) + "%";
+    // Daily
+    let btnD = document.getElementById('btn-daily');
+    if(res.user.can_daily) btnD.classList.remove('hidden');
+    else btnD.classList.add('hidden');
 
     // Inventory
     let invHtml = "";
     res.user.inventory.forEach(i => {
-        let symbol = i === "glücksbringer" ? "🐰" : i === "laptop" ? "💻" : "⚖️";
-        invHtml += `<span title="${i}">${symbol}</span>`;
+        let icon = "📦";
+        if(i.key.includes("drink")) icon = "⚡";
+        if(i.key.includes("laptop")) icon = "💻";
+        invHtml += `<div class="inv-item" onclick="useItem('${i.key}')" title="${i.name}">
+            ${icon} <span class="inv-count">${i.count}</span>
+        </div>`;
     });
-    document.getElementById("u-inventory").innerHTML = invHtml;
+    document.getElementById('u-inv').innerHTML = invHtml;
 
-    // Dashboard
-    document.getElementById("d-wins").innerText = res.user.stats.wins || 0;
-    document.getElementById("d-status").innerText = res.user.is_jailed ? `KNAST (${res.user.jail_time}s)` : "Frei";
-    document.getElementById("d-status").style.color = res.user.is_jailed ? "red" : "lime";
-    document.getElementById("d-stocks").innerText = res.user.stocks;
-    document.getElementById("d-stock-val").innerText = (res.user.stocks * res.stock.price).toFixed(2);
+    // Status
+    let st = document.getElementById('d-status');
+    if(res.user.is_jailed) {
+        st.innerText = "KNAST"; st.style.color = "red";
+        document.getElementById('d-jail-timer').innerText = res.user.jail_time + "s";
+    } else {
+        st.innerText = "FREI"; st.style.color = "lime";
+        document.getElementById('d-jail-timer').innerText = "";
+    }
+
+    // Stocks in Dash
+    let portHtml = "";
+    for(let s in res.user.stocks) {
+        let amt = res.user.stocks[s];
+        if(amt > 0) portHtml += `<div>${s}: ${amt} Stk</div>`;
+    }
+    document.getElementById('d-portfolio').innerHTML = portHtml || "Keine Aktien.";
 
     // Leaderboard
     let lb = "";
-    res.leaderboard.forEach(u => {
-        lb += `<tr><td>${u.name}</td><td>${u.level}</td><td style="color:var(--accent)">${u.geld}€</td></tr>`;
+    res.leaderboard.forEach((u, i) => {
+        lb += `<tr style="border-bottom: 1px solid #222;">
+            <td style="padding: 5px; color: ${i<3 ? 'gold' : '#888'}">#${i+1}</td>
+            <td>${u.name}</td>
+            <td style="text-align: right; color: var(--accent-neon);">${u.geld}€</td>
+        </tr>`;
     });
-    document.getElementById("leaderboard-body").innerHTML = lb;
+    document.getElementById('leaderboard').innerHTML = lb;
 
-    // Market / Chat
-    document.getElementById("ticker-price").innerText = res.stock.price.toFixed(2);
-    document.getElementById("market-price").innerText = res.stock.price.toFixed(2);
+    // Jobs
+    renderJobs();
 
+    // Shop
+    renderShop();
+
+    // Market
+    renderMarket();
+
+    // Chat
     renderChat(res.chat);
 }
 
-// --- JOBS & CRIME ---
+// --- RENDERERS ---
+const JOB_DATA = {
+    "flaschensammler": {name: "Flaschensammler", lvl: 1, sal: 10, xp: 10},
+    "tellerwaescher": {name: "Tellerwäscher", lvl: 2, sal: 25, xp: 20},
+    "zeitung": {name: "Zeitungsjunge", lvl: 5, sal: 60, xp: 40},
+    "nachhilfe": {name: "Nachhilfe", lvl: 10, sal: 150, xp: 80},
+    "informatiker": {name: "SysAdmin", lvl: 20, sal: 400, xp: 200},
+    "bankier": {name: "Bankier", lvl: 50, sal: 2000, xp: 1000},
+};
 function renderJobs() {
-    let html = "";
-    for(let k in JOBS) {
-        let j = JOBS[k];
-        html += `
-        <div class="card">
+    let h = "";
+    for(let k in JOB_DATA) {
+        let j = JOB_DATA[k];
+        h += `<div class="card">
             <h3>${j.name}</h3>
-            <p>Gehalt: <span style="color:lime">+${j.sal}€</span> | XP: ${j.name == "Bankier" ? 200 : j.sal}</p>
-            <p class="cost">Lvl ${j.req}</p>
-            <button class="btn" onclick="doJob('${k}')">Arbeiten (${j.cd}s)</button>
+            <p style="color:#888; font-size:12px;">Level ${j.lvl}+ | +${j.sal}€ | +${j.xp}XP</p>
+            <button class="btn w-full" style="margin-top:10px;" onclick="doWork('${k}')">Arbeiten</button>
         </div>`;
     }
-    document.getElementById("jobs-container").innerHTML = html;
+    document.getElementById('job-list').innerHTML = h;
 }
 
-async function doJob(key) {
-    let res = await api("work", {job: key});
-    showModal(res.ok ? "Arbeit erledigt" : "Fehler", res.msg);
-    if(res.leveled_up) showConfetti();
-    refreshData();
-}
-
-async function doCrime(type) {
-    let res = await api("crime", {type: type});
-    showModal(res.ok ? (res.win ? "Erfolg!" : "Verhaftet") : "Fehler", res.msg);
-    if(res.win) showConfetti();
-    refreshData();
-}
-
-// --- SHOP ---
+const SHOP_ITEMS = {
+    "energy_drink": {name: "Energy Drink", price: 50, desc: "Cooldown Reset"},
+    "spickzettel": {name: "Spickzettel", price: 200, desc: "+Hack Chance"},
+    "glücksbringer": {name: "Hasenpfote", price: 1000, desc: "+Crime Luck (Passive)"},
+    "laptop": {name: "Laptop", price: 5000, desc: "Safety (Passive)"},
+    "anwalt": {name: "Anwalt", price: 15000, desc: "Jail -50% (Passive)"}
+};
 function renderShop() {
-    let html = "";
-    for(let k in ITEMS) {
-        let i = ITEMS[k];
-        html += `
-        <div class="card">
+    let h = "";
+    for(let k in SHOP_ITEMS) {
+        let i = SHOP_ITEMS[k];
+        h += `<div class="card">
             <h3>${i.name}</h3>
-            <p class="cost">${i.price}€</p>
-            <button class="btn btn-warn" onclick="buyItem('${k}')">Kaufen</button>
+            <p style="color:#aaa; font-size:12px;">${i.desc}</p>
+            <div style="margin-top:10px; color: gold;">${i.price}€</div>
+            <button class="btn w-full" style="margin-top:5px;" onclick="buyItem('${k}')">Kaufen</button>
         </div>`;
     }
-    document.getElementById("shop-container").innerHTML = html;
+    document.getElementById('shop-list').innerHTML = h;
 }
 
-async function buyItem(k) {
-    let res = await api("shop", {item: k});
-    showModal(res.ok ? "Gekauft" : "Fehler", res.msg);
-    refreshData();
-}
-
-// --- CASINO ---
-function showGame(g) {
-    document.querySelectorAll(".game-ui").forEach(e => e.classList.add("hidden"));
-    document.getElementById("game-" + g).classList.remove("hidden");
-}
-
-/* BLACKJACK */
-async function bjAction(act) {
-    let bet = document.getElementById("bj-bet").value;
-    let res = await api("game/blackjack", {action: act, bet: bet});
-    if(!res.ok) { showModal("Fehler", res.msg || "Fehler"); return; }
-
-    let s = res.state;
-    renderCards("bj-dealer-cards", s.dealer);
-    renderCards("bj-player-cards", s.player);
-    document.getElementById("bj-score").innerText = "?"; // Could calculate locally but server handles logic
-
-    if(s.status === "playing") {
-        document.getElementById("bj-controls-start").classList.add("hidden");
-        document.getElementById("bj-controls-play").classList.remove("hidden");
-        document.getElementById("bj-msg").innerText = "";
-    } else {
-        document.getElementById("bj-controls-start").classList.remove("hidden");
-        document.getElementById("bj-controls-play").classList.add("hidden");
-        document.getElementById("bj-msg").innerText = s.msg;
-        if(s.status === "win" || s.status === "blackjack") showConfetti();
+function renderMarket() {
+    let h = "";
+    if(!data.market) return;
+    for(let s in data.market) {
+        let stock = data.market[s];
+        h += `<div class="stock-row">
+            <div>
+                <div style="font-weight:bold; color:white;">${stock.name} (${s})</div>
+                <div style="font-size:12px; color:#888;">${stock.price.toFixed(2)}€</div>
+            </div>
+            <div class="flex gap-10">
+                <button class="btn" style="padding: 5px 10px;" onclick="trade('${s}','buy')">KAUF</button>
+                <button class="btn btn-pink" style="padding: 5px 10px;" onclick="trade('${s}','sell')">VERK</button>
+            </div>
+        </div>`;
     }
-    refreshData();
-}
-
-function renderCards(elId, cards) {
-    let html = "";
-    cards.forEach(c => {
-        let color = (c.s === "♥" || c.s === "♦") ? "red" : "black";
-        html += `<div class="playing-card ${color}">${c.r}<br>${c.s}</div>`;
-    });
-    document.getElementById(elId).innerHTML = html;
-}
-
-/* ROULETTE */
-let rSelection = {type: null, value: null};
-function setupRoulette() {
-    let html = "";
-    for(let i=1; i<=36; i++) {
-        let color = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? "red" : "black";
-        html += `<div class="r-num ${color}" onclick="setRouletteBet('number', ${i})">${i}</div>`;
-    }
-    document.getElementById("roulette-nums").innerHTML = html;
-}
-
-function setRouletteBet(t, v) {
-    rSelection = {type: t, value: v};
-    document.getElementById("r-selection").innerText = `${t.toUpperCase()}: ${v}`;
-}
-
-async function spinRoulette() {
-    if(!rSelection.type) return;
-    let bet = document.getElementById("r-bet").value;
-
-    // Animation
-    document.getElementById("r-result").innerText = "ROLLING...";
-    await new Promise(r => setTimeout(r, 1000));
-
-    let res = await api("game/roulette", {bet: bet, type: rSelection.type, value: rSelection.value});
-    if(res.ok) {
-        document.getElementById("r-result").innerText = res.result + " (" + res.color + ")";
-        showModal(res.winnings > 0 ? "Gewonnen!" : "Verloren", res.msg);
-        if(res.winnings > 0) showConfetti();
-    } else {
-        showModal("Fehler", res.msg);
-    }
-    refreshData();
-}
-
-/* CRASH */
-async function startCrash() {
-    let bet = document.getElementById("crash-bet").value;
-    let res = await api("game/crash", {action: "start", bet: bet});
-    if(!res.ok) { showModal("Error", res.msg); return; }
-
-    document.getElementById("crash-controls-start").classList.add("hidden");
-    document.getElementById("crash-controls-cashout").classList.remove("hidden");
-    document.getElementById("crash-msg").innerText = "";
-
-    let startTime = res.start_time; // Server time, sync might be tricky.
-    // Simplified: Just count up locally. Server validates on cashout.
-    // Assuming simple multiplier growth: 1.0 + 0.1 * seconds?
-    // Let's do exponential: 1.0 * 1.05 ^ seconds
-
-    let counter = 1.00;
-    let t0 = Date.now();
-
-    crashInterval = setInterval(async () => {
-        let dt = (Date.now() - t0) / 1000;
-        // Growth function
-        counter = 1.0 + (dt * dt * 0.1); // Slow start, fast end
-
-        document.getElementById("crash-display").innerText = counter.toFixed(2) + "x";
-        document.getElementById("crash-line").style.height = Math.min(100, counter * 10) + "%";
-        document.getElementById("crash-line").style.width = Math.min(100, dt * 5) + "%";
-
-        if(counter > 100) clearInterval(crashInterval); // Cap display
-    }, 50);
-}
-
-async function cashoutCrash() {
-    clearInterval(crashInterval);
-    let currentMult = parseFloat(document.getElementById("crash-display").innerText);
-
-    let res = await api("game/crash", {action: "cashout", multiplier: currentMult});
-
-    document.getElementById("crash-controls-start").classList.remove("hidden");
-    document.getElementById("crash-controls-cashout").classList.add("hidden");
-
-    if(res.ok) {
-        if(res.win) {
-            document.getElementById("crash-msg").innerText = res.msg;
-            document.getElementById("crash-msg").style.color = "lime";
-            showConfetti();
-        } else {
-            document.getElementById("crash-msg").innerText = res.msg;
-            document.getElementById("crash-msg").style.color = "red";
-        }
-    } else {
-        document.getElementById("crash-msg").innerText = res.msg || "Fehler";
-    }
-    refreshData();
-}
-
-
-// --- SOCIAL ---
-async function sendChat() {
-    let msg = document.getElementById("chat-msg").value;
-    if(!msg) return;
-    await api("chat", {msg: msg});
-    document.getElementById("chat-msg").value = "";
-    refreshData();
+    document.getElementById('market-list').innerHTML = h;
 }
 
 function renderChat(msgs) {
-    let html = "";
-    msgs.forEach(m => {
-        html += `<div class="chat-msg"><span class="time">[${m.time}]</span><span class="user">${m.name}:</span> ${m.msg}</div>`;
-    });
-    document.getElementById("chat-box").innerHTML = html;
-    // Auto scroll?
-    // document.getElementById("chat-box").scrollTop = document.getElementById("chat-box").scrollHeight;
+    let b = document.getElementById('chat-box');
+    let wasBottom = b.scrollHeight - b.scrollTop === b.clientHeight;
+    b.innerHTML = msgs.map(m => `
+        <div class="chat-msg">
+            <span class="chat-time">${m.time}</span>
+            <span class="chat-user">${m.name}:</span> ${m.msg}
+        </div>
+    `).join('');
+    if(wasBottom) b.scrollTop = b.scrollHeight;
 }
 
-async function transferMoney() {
-    let u = document.getElementById("trans-user").value;
-    let a = document.getElementById("trans-amt").value;
-    let res = await api("transfer", {receiver: u, amount: a});
-    showModal(res.ok ? "Gesendet" : "Fehler", res.msg);
-    refreshData();
+// --- ACTIONS ---
+async function claimDaily() {
+    let res = await api('daily');
+    toast(res.msg, res.ok ? 'success' : 'error');
+    refresh();
 }
 
-async function tradeStock(act) {
-    let amt = document.getElementById(act == "buy" ? "buy-amt" : "sell-amt").value;
-    let res = await api("stock", {action: act, amount: amt});
-    showModal(res.ok ? "Order ausgeführt" : "Fehler", res.msg);
-    refreshData();
+async function useItem(k) {
+    let res = await api('item/use', {item: k});
+    toast(res.msg, res.ok ? 'success' : 'error');
+    refresh();
 }
 
-// --- UTILS ---
-function showModal(title, body) {
-    document.getElementById("m-title").innerText = title;
-    document.getElementById("m-body").innerText = body;
-    document.getElementById("modal").classList.remove("hidden");
+async function doWork(j) {
+    let res = await api('work', {job: j});
+    toast(res.msg, res.ok ? 'success' : 'error');
+    refresh();
 }
 
-function closeModal(e) {
-    if(e === 'force' || e.target.id === "modal") {
-        document.getElementById("modal").classList.add("hidden");
+async function doCrime(t) {
+    let res = await api('crime', {type: t});
+    if(res.ok) {
+        if(res.win) showModal("ERFOLG", res.msg);
+        else showModal("VERHAFTET", res.msg);
+    } else {
+        toast(res.msg, 'error');
     }
+    refresh();
 }
 
-function showConfetti() {
-    // CSS-only simple visual flash instead of complex particle system for single file
-    let b = document.body;
-    let oldBg = b.style.backgroundColor;
-    b.style.backgroundColor = "#223322";
-    setTimeout(() => b.style.backgroundColor = oldBg, 100);
-    setTimeout(() => b.style.backgroundColor = "#223322", 200);
-    setTimeout(() => b.style.backgroundColor = oldBg, 300);
+async function buyItem(k) {
+    let res = await api('shop/buy', {item: k});
+    toast(res.msg, res.ok ? 'success' : 'error');
+    refresh();
+}
+
+async function trade(sym, act) {
+    let amt = prompt(`${act.toUpperCase()} ${sym} - Menge:`, "1");
+    if(!amt) return;
+    let res = await api('stock', {symbol: sym, action: act, amount: amt});
+    toast(res.msg, res.ok ? 'success' : 'error');
+    refresh();
+}
+
+async function sendChat() {
+    let i = document.getElementById('chat-in');
+    if(!i.value) return;
+    await api('chat', {msg: i.value});
+    i.value = "";
+    refresh();
+}
+
+async function doTransfer() {
+    let u = document.getElementById('tx-user').value;
+    let a = document.getElementById('tx-amt').value;
+    let res = await api('transfer', {receiver: u, amount: a});
+    toast(res.msg, res.ok ? 'success' : 'error');
+}
+
+// --- GAMES ---
+function showGame(g) {
+    document.querySelectorAll('.game-ui').forEach(e => e.classList.add('hidden'));
+    document.getElementById('game-'+g).classList.remove('hidden');
+}
+
+/* BJ */
+async function bjAction(act) {
+    let bet = document.getElementById('bj-bet').value;
+    let res = await api('game/blackjack', {action: act, bet: bet});
+    if(!res.ok) return toast(res.msg, 'error');
+
+    let s = res.state;
+    // Render Cards
+    document.getElementById('bj-dealer').innerHTML = s.dealer.map(c =>
+        `<div class="card-visual ${['♥','♦'].includes(c.s)?'red':''}">${c.r}<br>${c.s}</div>`
+    ).join('');
+    document.getElementById('bj-player').innerHTML = s.player.map(c =>
+        `<div class="card-visual ${['♥','♦'].includes(c.s)?'red':''}">${c.r}<br>${c.s}</div>`
+    ).join('');
+
+    document.getElementById('bj-msg').innerText = s.msg || "";
+
+    let playDiv = document.getElementById('bj-ctrl-play');
+    let startDiv = document.getElementById('bj-ctrl-start');
+
+    if(s.status === 'playing') {
+        playDiv.classList.remove('hidden');
+        startDiv.classList.add('hidden');
+    } else {
+        playDiv.classList.add('hidden');
+        startDiv.classList.remove('hidden');
+        if(s.status === 'win' || s.status === 'blackjack') toast("GEWONNEN!", 'success');
+    }
+    refresh();
+}
+
+/* ROULETTE */
+function rouSel(t, v) {
+    rouSelection = {type: t, value: v};
+    document.getElementById('rou-choice').innerText = `${t.toUpperCase()}: ${v}`;
+}
+async function rouSpin() {
+    if(!rouSelection) return toast("Bitte setzen!", 'error');
+    let bet = document.getElementById('rou-bet').value;
+
+    // Animation
+    document.getElementById('rou-choice').innerText = "ROLLING...";
+    await new Promise(r => setTimeout(r, 800));
+
+    let res = await api('game/roulette', {bet: bet, type: rouSelection.type, value: rouSelection.value});
+    if(res.ok) {
+        showModal(res.winnings>0?"GEWONNEN":"VERLOREN", `${res.msg}`);
+    } else {
+        toast(res.msg, 'error');
+    }
+    refresh();
+}
+
+/* CRASH */
+async function crashStart() {
+    let bet = document.getElementById('crash-bet').value;
+    let res = await api('game/crash', {action: 'start', bet: bet});
+    if(!res.ok) return toast(res.msg, 'error');
+
+    document.getElementById('crash-start').classList.add('hidden');
+    document.getElementById('crash-out').classList.remove('hidden');
+    document.getElementById('crash-res').innerText = "";
+
+    let m = 1.00;
+    let t0 = Date.now();
+
+    crashTimer = setInterval(() => {
+        let dt = (Date.now() - t0) / 1000;
+        m = 1.0 + (dt * dt * 0.1);
+        document.getElementById('crash-val').innerText = m.toFixed(2) + 'x';
+
+        let r = document.getElementById('rocket');
+        r.style.bottom = Math.min(180, dt * 10) + "px";
+        r.style.left = Math.min(90, dt * 5) + "%";
+
+        if(m > 100) clearInterval(crashTimer);
+    }, 50);
+}
+
+async function crashOut() {
+    clearInterval(crashTimer);
+    let m = parseFloat(document.getElementById('crash-val').innerText);
+    let res = await api('game/crash', {action: 'cashout', multiplier: m});
+
+    document.getElementById('crash-start').classList.remove('hidden');
+    document.getElementById('crash-out').classList.add('hidden');
+
+    if(res.ok) {
+        let msg = res.win ? `CASHOUT @ ${m}x (+${res.winnings}€)` : `CRASHED @ ${res.crash_point.toFixed(2)}x`;
+        document.getElementById('crash-res').innerText = msg;
+        document.getElementById('crash-res').style.color = res.win ? 'lime' : 'red';
+    } else {
+        toast(res.msg, 'error');
+    }
+    refresh();
+}
+
+// --- UI UTILS ---
+function nav(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    document.getElementById('view-'+id).classList.remove('hidden');
+    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function toast(msg, type='info') {
+    let t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerText = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+function showModal(title, body) {
+    document.getElementById('m-title').innerText = title;
+    document.getElementById('m-body').innerText = body;
+    document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal(e) {
+    if(e==='force' || e.target.id==='modal-overlay')
+        document.getElementById('modal-overlay').classList.add('hidden');
 }
 
 </script>
