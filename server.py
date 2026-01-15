@@ -2,408 +2,614 @@ import json
 import os
 import random
 import time
+import html
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-BUSINESSES = {
-    "stift": {"name": "Stifte-Verleih", "cost": 100, "income": 1},
-    "kiosk": {"name": "Pausen-Kiosk", "cost": 1000, "income": 15},
-    "mafia": {"name": "Pausenhof-Mafia", "cost": 5000, "income": 100}
+# --- CONFIGURATION & GLOBALS ---
+DATA_FILE = "bankdaten_secure.json"
+MAX_CHAT_HISTORY = 10
+
+# Game Constants
+JOBS = {
+    "tellerwaescher": {"name": "Tellerwäscher", "req_level": 1, "salary": 15, "xp": 10, "cooldown": 10},
+    "zeitung": {"name": "Zeitungsjunge", "req_level": 3, "salary": 40, "xp": 25, "cooldown": 30},
+    "informatiker": {"name": "Informatiker", "req_level": 5, "salary": 120, "xp": 60, "cooldown": 60},
+    "bankier": {"name": "Bankier", "req_level": 10, "salary": 500, "xp": 200, "cooldown": 120}
 }
 
-def create_deck():
-    suits = ["♥", "♦", "♠", "♣"]
-    ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-    deck = []
-    for s in suits:
-        for r in ranks:
-            deck.append({"suit": s, "rank": r})
+ITEMS = {
+    "glücksbringer": {"name": "Hasenpfote", "price": 500, "desc": "+5% Gewinnchance bei Crime", "type": "buff_crime", "value": 0.05},
+    "laptop": {"name": "Hacker-Laptop", "price": 2000, "desc": "Sicherere Überfälle (Geringere Jail-Chance)", "type": "buff_safe", "value": 0.10},
+    "anwalt": {"name": "Guter Anwalt", "price": 5000, "desc": "Halbiert Gefängniszeit", "type": "buff_jail", "value": 0.5}
+}
+
+# In-Memory Globals (Simulation)
+stock_market = {
+    "price": 100.0,
+    "trend": 0,
+    "last_update": time.time()
+}
+
+chat_history = []
+
+# --- DATA MANAGEMENT ---
+class Database:
+    def __init__(self):
+        self.filename = DATA_FILE
+        self.data = {"users": {}, "ips": {}}
+        self.load()
+
+    def load(self):
+        if os.path.exists(self.filename):
+            try:
+                with open(self.filename, "r") as f:
+                    temp = json.load(f)
+                    if "users" in temp:
+                        self.data = temp
+            except:
+                pass
+
+    def save(self):
+        with open(self.filename, "w") as f:
+            json.dump(self.data, f)
+
+    def get_user(self, name):
+        return self.data["users"].get(name)
+
+    def create_user(self, name, pw, ip):
+        if name in self.data["users"]:
+            return False, "Name vergeben!"
+
+        # IP Check disabled for testing/ease of use, or enable if strict
+        # if ip in self.data["ips"]: return False, "IP schon registriert!"
+
+        self.data["users"][name] = {
+            "passwort": pw,
+            "geld": 100.0, # Startbonus
+            "xp": 0,
+            "level": 1,
+            "inventory": [],
+            "stocks": 0,
+            "cooldowns": {}, # 'work': timestamp, 'crime': timestamp, 'jail_until': timestamp
+            "stats": {"wins": 0, "games": 0},
+            "blackjack": None, # Active game state
+            "crash": None # Active game state
+        }
+        self.data["ips"][ip] = name
+        self.save()
+        return True, "User erstellt."
+
+db = Database()
+
+# --- HELPER FUNCTIONS ---
+def update_stock_market():
+    # Update price occasionally
+    now = time.time()
+    if now - stock_market["last_update"] > 5: # Every 5 seconds allowed to change
+        change = random.uniform(-0.05, 0.05) # +/- 5%
+        stock_market["price"] *= (1 + change)
+        if stock_market["price"] < 1: stock_market["price"] = 1.0
+        stock_market["last_update"] = now
+
+def check_levelup(user):
+    # Formula: Level = 1 + sqrt(XP / 50) roughly
+    # Or simple thresholds. Let's use thresholds.
+    current_level = user["level"]
+    # Required XP for next level: 100 * Level
+    req_xp = 100 * current_level
+    if user["xp"] >= req_xp:
+        user["level"] += 1
+        user["xp"] -= req_xp # Carry over or reset? Let's subtract to make it 'tiers'
+        return True
+    return False
+
+def get_user_buffs(user):
+    buffs = {"crime_chance": 0, "jail_safety": 0, "jail_time_red": 0}
+    inv = user.get("inventory", [])
+    for item_key in inv:
+        item = ITEMS.get(item_key)
+        if item:
+            if item["type"] == "buff_crime": buffs["crime_chance"] += item["value"]
+            if item["type"] == "buff_safe": buffs["jail_safety"] += item["value"]
+            if item["type"] == "buff_jail": buffs["jail_time_red"] = max(buffs["jail_time_red"], item["value"])
+    return buffs
+
+# --- ROUTES ---
+
+@app.route('/')
+def index():
+    return open("index.html", "r", encoding="utf-8").read()
+
+@app.route('/api/auth', methods=['POST'])
+def auth():
+    data = request.json
+    cmd = data.get("cmd")
+    name = data.get("name")
+    pw = data.get("pw")
+    ip = request.remote_addr
+
+    if cmd == "register":
+        success, msg = db.create_user(name, pw, ip)
+        return jsonify({"ok": success, "msg": msg})
+
+    elif cmd == "login":
+        user = db.get_user(name)
+        if user and user["passwort"] == pw:
+            return jsonify({"ok": True, "msg": "Willkommen zurück!"})
+        return jsonify({"ok": False, "msg": "Falsche Daten!"})
+
+@app.route('/api/data', methods=['POST'])
+def get_data():
+    name = request.json.get("name")
+    pw = request.json.get("pw")
+    user = db.get_user(name)
+
+    if not user or user["passwort"] != pw:
+        return jsonify({"ok": False})
+
+    update_stock_market()
+
+    # Check Jail
+    jail_until = user["cooldowns"].get("jail_until", 0)
+    is_jailed = time.time() < jail_until
+
+    # Leaderboard (Top 5 Money)
+    sorted_users = sorted(db.data["users"].items(), key=lambda x: x[1]["geld"], reverse=True)[:5]
+    leaderboard = [{"name": k, "geld": int(v["geld"]), "level": v["level"]} for k,v in sorted_users]
+
+    return jsonify({
+        "ok": True,
+        "user": {
+            "geld": user["geld"],
+            "xp": user["xp"],
+            "level": user["level"],
+            "inventory": user["inventory"],
+            "stocks": user.get("stocks", 0),
+            "is_jailed": is_jailed,
+            "jail_time": int(max(0, jail_until - time.time()))
+        },
+        "stock": {
+            "price": stock_market["price"]
+        },
+        "chat": chat_history,
+        "leaderboard": leaderboard
+    })
+
+@app.route('/api/work', methods=['POST'])
+def work():
+    name = request.json.get("name")
+    user = db.get_user(name)
+    job_key = request.json.get("job")
+
+    if not user: return jsonify({"ok": False})
+
+    # Check Jail
+    if time.time() < user["cooldowns"].get("jail_until", 0):
+         return jsonify({"ok": False, "msg": "Du bist im Gefängnis!"})
+
+    job = JOBS.get(job_key)
+    if not job: return jsonify({"ok": False, "msg": "Job existiert nicht."})
+
+    if user["level"] < job["req_level"]:
+        return jsonify({"ok": False, "msg": f"Level {job['req_level']} benötigt!"})
+
+    last_work = user["cooldowns"].get(f"work_{job_key}", 0)
+    if time.time() < last_work + job["cooldown"]:
+        return jsonify({"ok": False, "msg": "Warte auf Cooldown!"})
+
+    # Success
+    user["geld"] += job["salary"]
+    user["xp"] += job["xp"]
+    user["cooldowns"][f"work_{job_key}"] = time.time()
+
+    leveled_up = check_levelup(user)
+    db.save()
+
+    msg = f"Gearbeitet! +{job['salary']}€, +{job['xp']} XP."
+    if leveled_up: msg += " LEVEL UP!"
+
+    return jsonify({"ok": True, "msg": msg, "leveled_up": leveled_up})
+
+@app.route('/api/crime', methods=['POST'])
+def crime():
+    name = request.json.get("name")
+    user = db.get_user(name)
+    risk_type = request.json.get("type") # 'robbery', 'hack'
+
+    if not user: return jsonify({"ok": False})
+
+    # Check Jail
+    if time.time() < user["cooldowns"].get("jail_until", 0):
+         return jsonify({"ok": False, "msg": "Du bist im Gefängnis!"})
+
+    # Global Crime Cooldown
+    last_crime = user["cooldowns"].get("crime", 0)
+    if time.time() < last_crime + 60:
+         return jsonify({"ok": False, "msg": "Füße stillhalten! (Cooldown)"})
+
+    buffs = get_user_buffs(user)
+
+    if risk_type == "bank":
+        # Bank Robbery: High Risk, High Reward
+        base_chance = 0.30 + buffs["crime_chance"] # 30% base
+        potential_win = random.randint(500, 2000)
+        jail_seconds = 60
+    elif risk_type == "hack":
+        # Hacking: Medium Risk, Medium Reward
+        base_chance = 0.50 + buffs["crime_chance"] # 50% base
+        potential_win = random.randint(100, 500)
+        jail_seconds = 30
+    else:
+        return jsonify({"ok": False})
+
+    user["cooldowns"]["crime"] = time.time()
+
+    if random.random() < base_chance:
+        # Success
+        user["geld"] += potential_win
+        user["xp"] += 50
+        leveled_up = check_levelup(user)
+        db.save()
+        return jsonify({"ok": True, "msg": f"Erfolg! Du hast {potential_win}€ erbeutet!", "win": True})
+    else:
+        # Fail
+        # Check if saved by safety buff? No, buff increases chance.
+        # Penalty: Lose cash or Jail
+        # 50/50 between Jail and Cash Loss?
+        # Buff 'jail_safety' reduces jail chance if caught? No, let's just do simple jail.
+
+        jail_time = jail_seconds
+        if buffs["jail_time_red"] > 0:
+            jail_time = int(jail_time * (1.0 - buffs["jail_time_red"]))
+
+        user["cooldowns"]["jail_until"] = time.time() + jail_time
+        loss = int(user["geld"] * 0.1) # Lose 10% cash on arrest
+        user["geld"] -= loss
+        db.save()
+        return jsonify({"ok": True, "msg": f"Erwischt! {jail_time}s Knast und -{loss}€ Anwaltskosten.", "win": False})
+
+@app.route('/api/shop', methods=['POST'])
+def shop():
+    name = request.json.get("name")
+    item_key = request.json.get("item")
+    user = db.get_user(name)
+
+    if not user: return jsonify({"ok": False})
+
+    item = ITEMS.get(item_key)
+    if not item: return jsonify({"ok": False, "msg": "Item nicht gefunden."})
+
+    if user["geld"] < item["price"]:
+        return jsonify({"ok": False, "msg": "Nicht genug Geld!"})
+
+    if item_key in user["inventory"]:
+        return jsonify({"ok": False, "msg": "Hast du schon!"})
+
+    user["geld"] -= item["price"]
+    user["inventory"].append(item_key)
+    db.save()
+    return jsonify({"ok": True, "msg": f"{item['name']} gekauft!"})
+
+@app.route('/api/stock', methods=['POST'])
+def stock_trade():
+    name = request.json.get("name")
+    action = request.json.get("action") # 'buy', 'sell'
+    amount = int(request.json.get("amount", 0))
+    user = db.get_user(name)
+
+    if not user or amount <= 0: return jsonify({"ok": False})
+
+    update_stock_market()
+    current_price = stock_market["price"]
+
+    if action == "buy":
+        cost = current_price * amount
+        if user["geld"] >= cost:
+            user["geld"] -= cost
+            user.setdefault("stocks", 0)
+            user["stocks"] += amount
+            db.save()
+            return jsonify({"ok": True, "msg": f"{amount} Coins gekauft."})
+        else:
+            return jsonify({"ok": False, "msg": "Zu wenig Geld."})
+
+    elif action == "sell":
+        if user.get("stocks", 0) >= amount:
+            gain = current_price * amount
+            user["stocks"] -= amount
+            user["geld"] += gain
+            db.save()
+            return jsonify({"ok": True, "msg": f"{amount} Coins verkauft."})
+        else:
+            return jsonify({"ok": False, "msg": "Nicht genug Coins."})
+
+    return jsonify({"ok": False})
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    name = request.json.get("name")
+    msg = request.json.get("msg")
+
+    if not name or not msg: return jsonify({"ok": False})
+
+    clean_msg = html.escape(msg)
+    chat_history.append({"name": name, "msg": clean_msg, "time": time.strftime("%H:%M")})
+
+    if len(chat_history) > MAX_CHAT_HISTORY:
+        chat_history.pop(0)
+
+    return jsonify({"ok": True})
+
+@app.route('/api/transfer', methods=['POST'])
+def transfer():
+    sender_name = request.json.get("name")
+    receiver_name = request.json.get("receiver")
+    amount = int(request.json.get("amount", 0))
+
+    sender = db.get_user(sender_name)
+    receiver = db.get_user(receiver_name)
+
+    if not sender or not receiver:
+        return jsonify({"ok": False, "msg": "User nicht gefunden."})
+
+    if amount <= 0:
+        return jsonify({"ok": False, "msg": "Ungültiger Betrag."})
+
+    if sender["geld"] < amount:
+        return jsonify({"ok": False, "msg": "Nicht genug Geld."})
+
+    sender["geld"] -= amount
+    receiver["geld"] += amount
+    db.save()
+    return jsonify({"ok": True, "msg": f"{amount}€ an {receiver_name} gesendet."})
+
+# --- CASINO GAMES ---
+
+# Helper for Deck
+def get_deck():
+    ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A']
+    suits = ['♥','♦','♠','♣']
+    deck = [{'r':r, 's':s} for r in ranks for s in suits]
     random.shuffle(deck)
     return deck
 
-def calc_score(hand):
+def calc_hand(hand):
     score = 0
     aces = 0
     for card in hand:
-        r = card["rank"]
-        if r in ["J", "Q", "K"]:
-            score += 10
-        elif r == "A":
-            aces += 1
+        r = card['r']
+        if r in ['J','Q','K']: score += 10
+        elif r == 'A':
             score += 11
-        else:
-            score += int(r)
-
-    while score > 21 and aces > 0:
+            aces += 1
+        else: score += int(r)
+    while score > 21 and aces:
         score -= 10
         aces -= 1
     return score
 
-class Konto():
-    def __init__(self):
-        self.dateiname = "bankdaten_secure.json"
-        self.daten = {"users": {}, "ips": {}}
-        self.laden()
+@app.route('/api/game/blackjack', methods=['POST'])
+def blackjack():
+    name = request.json.get("name")
+    action = request.json.get("action") # 'start', 'hit', 'stand'
+    bet = int(request.json.get("bet", 0))
+    user = db.get_user(name)
 
-    def laden(self):
-        if os.path.exists(self.dateiname):
-            try:
-                with open(self.dateiname, "r") as datei:
-                    temp = json.load(datei)
-                    if "users" in temp:
-                        self.daten = temp
-            except:
-                pass
+    if not user: return jsonify({"ok": False})
 
-    def speichern(self):
-        with open(self.dateiname, "w") as datei:
-            json.dump(self.daten, datei)
+    if action == "start":
+        if user["blackjack"]: return jsonify({"ok": False, "msg": "Spiel läuft schon."})
+        if bet <= 0 or user["geld"] < bet: return jsonify({"ok": False, "msg": "Einsatz ungültig."})
 
-bank = Konto()
+        user["geld"] -= bet
+        deck = get_deck()
+        player = [deck.pop(), deck.pop()]
+        dealer = [deck.pop(), deck.pop()]
 
-def mach_liste(wer):
-    html = ""
-    # Sort by money descending
-    sorted_users = sorted(bank.daten["users"].items(), key=lambda x: x[1].get("geld", 0), reverse=True)
-
-    for u, d in sorted_users:
-        if wer == "Admin":
-            html += f"<b>{u}</b>: {d['geld']}€ (PW: {d['passwort']})<br>"
-        else:
-            html += f"<b>{u}</b>: {d['geld']}€<br>"
-    return html
-
-@app.route('/')
-def startseite():
-    return open("index.html", "r", encoding="utf-8").read()
-
-@app.route('/aktion', methods=['POST'])
-def verarbeiten():
-    req = request.json
-    befehl = req.get('befehl')
-    name = req.get('name')
-    pw = req.get('pw')
-    user_ip = request.remote_addr
-
-    if befehl == "neu":
-        if name != "Admin" and user_ip in bank.daten["ips"]:
-            return jsonify({"text": "Nur 1 Konto pro PC erlaubt!"})
-        if name in bank.daten["users"]:
-            return jsonify({"text": "Name vergeben!"})
-
-        bank.daten["users"][name] = {
-            "geld": 0,
-            "passwort": pw,
-            "buildings": {},
-            "last_collected": time.time()
-        }
-        if name != "Admin":
-            bank.daten["ips"][user_ip] = name
-        bank.speichern()
-        return jsonify({"text": "Konto erstellt. Geh arbeiten!"})
-
-    elif befehl == "login":
-        if name in bank.daten["users"] and bank.daten["users"][name]["passwort"] == pw:
-            # Migration check
-            if "buildings" not in bank.daten["users"][name]:
-                bank.daten["users"][name]["buildings"] = {}
-                bank.daten["users"][name]["last_collected"] = time.time()
-                bank.speichern()
-
-            # Check if active blackjack game exists, if so return it?
-            # For simplicity, we might clear it or let the user resume.
-            # Let's just return success.
-            bj_state = bank.daten["users"][name].get("blackjack", None)
-
-            return jsonify({
-                "ok": True,
-                "geld": bank.daten["users"][name]["geld"],
-                "liste": mach_liste(name),
-                "buildings": bank.daten["users"][name]["buildings"],
-                "blackjack": bj_state
-            })
-        return jsonify({"text": "Login falsch!"})
-
-    elif befehl == "arbeiten":
-        verdienst = random.randint(10, 20)
-        bank.daten["users"][name]["geld"] += verdienst
-        bank.speichern()
-        return jsonify({"ok": True, "text": f"Du hast hart gearbeitet: +{verdienst} €", "geld": bank.daten["users"][name]["geld"], "liste": mach_liste(name)})
-
-    elif befehl == "kaufen":
-        item = req.get('item')
-        if item not in BUSINESSES:
-            return jsonify({"text": "Gibt es nicht!"})
-
-        cost = BUSINESSES[item]["cost"]
-        user_data = bank.daten["users"][name]
-
-        if user_data["geld"] < cost:
-             return jsonify({"text": "Nicht genug Geld!", "geld": user_data["geld"]})
-
-        user_data["geld"] -= cost
-        if "buildings" not in user_data: user_data["buildings"] = {}
-
-        user_data["buildings"][item] = user_data["buildings"].get(item, 0) + 1
-        bank.speichern()
-
-        return jsonify({
-            "ok": True,
-            "text": f"Gekauft: {BUSINESSES[item]['name']}",
-            "geld": user_data["geld"],
-            "buildings": user_data["buildings"]
-        })
-
-    elif befehl == "abholen":
-        user_data = bank.daten["users"][name]
-        now = time.time()
-        last = user_data.get("last_collected", now)
-        diff = now - last
-
-        if diff > 86400: diff = 86400 # Max 24h
-
-        income_per_sec = 0
-        buildings = user_data.get("buildings", {})
-        for b_key, count in buildings.items():
-            if b_key in BUSINESSES:
-                income_per_sec += BUSINESSES[b_key]["income"] * count
-
-        earned = int(income_per_sec * diff)
-
-        if earned > 0:
-            user_data["geld"] += earned
-            user_data["last_collected"] = now
-            bank.speichern()
-            msg = f"Einnahmen abgeholt: {earned}€"
-        else:
-            user_data["last_collected"] = now
-            bank.speichern()
-            msg = "Nichts zu holen."
-
-        return jsonify({
-            "ok": True,
-            "text": msg,
-            "geld": user_data["geld"],
-            "liste": mach_liste(name)
-        })
-
-    # --- BLACKJACK LOGIC ---
-    elif befehl == "bj_start":
-        einsatz = int(req.get('einsatz'))
-        user_data = bank.daten["users"][name]
-
-        if user_data.get("blackjack"):
-            return jsonify({"text": "Spiel läuft schon!", "blackjack": user_data["blackjack"]})
-
-        if user_data["geld"] < einsatz:
-            return jsonify({"text": "Nicht genug Geld!"})
-
-        user_data["geld"] -= einsatz
-        deck = create_deck()
-
-        player_hand = [deck.pop(), deck.pop()]
-        dealer_hand = [deck.pop(), deck.pop()]
-
-        state = {
-            "deck": deck,
-            "player": player_hand,
-            "dealer": dealer_hand,
-            "bet": einsatz,
-            "status": "playing"
+        user["blackjack"] = {
+            "deck": deck, "player": player, "dealer": dealer, "bet": bet, "status": "playing"
         }
 
-        user_data["blackjack"] = state
-        bank.speichern()
+        # Check Instant Blackjack
+        if calc_hand(player) == 21:
+            win = bet * 2.5
+            user["geld"] += win
+            user["blackjack"]["status"] = "win"
+            user["blackjack"]["msg"] = "BLACKJACK!"
+            state = user["blackjack"]
+            user["blackjack"] = None # End
+            db.save()
+            return jsonify({"ok": True, "state": state})
 
-        # Check Natural Blackjack
-        p_score = calc_score(player_hand)
-        if p_score == 21:
-            # Auto win 3:2 unless dealer also has 21 (Push) - simplificatin: instant win
-            gewinn = int(einsatz * 2.5)
-            user_data["geld"] += gewinn
-            del user_data["blackjack"]
-            bank.speichern()
-            return jsonify({
-                "ok": True,
-                "text": "BLACKJACK!!",
-                "geld": user_data["geld"],
-                "blackjack": {
-                    "player": player_hand,
-                    "dealer": dealer_hand, # Show all
-                    "status": "finished",
-                    "result": "win"
-                }
-            })
+        db.save()
+        # Hide dealer second card
+        visible_state = user["blackjack"].copy()
+        visible_state["dealer"] = [visible_state["dealer"][0], {"r":"?", "s":"?"}]
+        del visible_state["deck"]
+        return jsonify({"ok": True, "state": visible_state})
 
-        return jsonify({
-            "ok": True,
-            "blackjack": {
-                "player": player_hand,
-                "dealer": [dealer_hand[0], {"suit": "?", "rank": "?"}], # Hide 2nd card
-                "status": "playing",
-                "score": p_score
-            },
-            "geld": user_data["geld"]
-        })
+    elif action == "hit":
+        if not user["blackjack"]: return jsonify({"ok": False})
+        state = user["blackjack"]
+        state["player"].append(state["deck"].pop())
+        score = calc_hand(state["player"])
 
-    elif befehl == "bj_hit":
-        user_data = bank.daten["users"][name]
-        state = user_data.get("blackjack")
-        if not state: return jsonify({"text": "Kein Spiel!"})
+        if score > 21:
+            # Bust
+            state["status"] = "lose"
+            state["msg"] = "BUST! Über 21."
+            user["blackjack"] = None
+            db.save()
+            return jsonify({"ok": True, "state": state})
 
-        deck = state["deck"]
-        # Ensure deck isn't empty? (Unlikely for one hand but good practice)
-        if not deck: deck = create_deck()
+        db.save()
+        visible_state = state.copy()
+        visible_state["dealer"] = [visible_state["dealer"][0], {"r":"?", "s":"?"}]
+        del visible_state["deck"]
+        return jsonify({"ok": True, "state": visible_state})
 
-        new_card = deck.pop()
-        state["player"].append(new_card)
-        p_score = calc_score(state["player"])
+    elif action == "stand":
+        if not user["blackjack"]: return jsonify({"ok": False})
+        state = user["blackjack"]
 
-        if p_score > 21:
-            # BUST
-            del user_data["blackjack"]
-            bank.speichern()
-            return jsonify({
-                "ok": True,
-                "text": f"Bust! ({p_score})",
-                "blackjack": {
-                    "player": state["player"],
-                    "dealer": state["dealer"],
-                    "status": "finished",
-                    "result": "lose",
-                    "score": p_score
-                }
-            })
+        # Dealer plays
+        while calc_hand(state["dealer"]) < 17:
+            state["dealer"].append(state["deck"].pop())
 
-        bank.speichern()
-        return jsonify({
-            "ok": True,
-            "blackjack": {
-                "player": state["player"],
-                "dealer": [state["dealer"][0], {"suit": "?", "rank": "?"}],
-                "status": "playing",
-                "score": p_score
-            }
-        })
+        p_score = calc_hand(state["player"])
+        d_score = calc_hand(state["dealer"])
 
-    elif befehl == "bj_stand":
-        user_data = bank.daten["users"][name]
-        state = user_data.get("blackjack")
-        if not state: return jsonify({"text": "Kein Spiel!"})
-
-        deck = state["deck"]
-        dealer_hand = state["dealer"]
-        p_score = calc_score(state["player"])
-
-        # Dealer draws until 17
-        while calc_score(dealer_hand) < 17:
-            if not deck: deck = create_deck() # resupply
-            dealer_hand.append(deck.pop())
-
-        d_score = calc_score(dealer_hand)
-
-        del user_data["blackjack"] # Game over
-
-        msg = ""
-        result = ""
-        gewinn = 0
-
-        if d_score > 21:
-            msg = "Dealer Bust! Du gewinnst!"
-            result = "win"
-            gewinn = state["bet"] * 2
-        elif d_score > p_score:
-            msg = f"Dealer hat {d_score}. Du verlierst."
-            result = "lose"
-        elif d_score < p_score:
-            msg = f"Du hast {p_score}, Dealer hat {d_score}. Sieg!"
-            result = "win"
-            gewinn = state["bet"] * 2
+        win_amount = 0
+        if d_score > 21 or p_score > d_score:
+            state["status"] = "win"
+            state["msg"] = "Gewonnen!"
+            win_amount = state["bet"] * 2
+        elif p_score == d_score:
+            state["status"] = "push"
+            state["msg"] = "Unentschieden."
+            win_amount = state["bet"]
         else:
-            msg = "Unentschieden (Push)."
-            result = "push"
-            gewinn = state["bet"]
+            state["status"] = "lose"
+            state["msg"] = "Bank gewinnt."
 
-        user_data["geld"] += gewinn
-        bank.speichern()
+        user["geld"] += win_amount
+        user["blackjack"] = None
+        db.save()
 
-        return jsonify({
-            "ok": True,
-            "text": msg,
-            "geld": user_data["geld"],
-            "blackjack": {
-                "player": state["player"],
-                "dealer": dealer_hand,
-                "status": "finished",
-                "result": result,
-                "d_score": d_score,
-                "p_score": p_score
-            }
-        })
-    # --- END BLACKJACK ---
+        # Return full state including dealer cards
+        del state["deck"]
+        return jsonify({"ok": True, "state": state})
 
-    elif befehl == "cheat":
-        if name != "Admin": return jsonify({"text": "Nur für Admin!"})
-        ziel = req.get('ziel')
-        betrag = int(req.get('betrag'))
-        if ziel in bank.daten["users"]:
-            bank.daten["users"][ziel]["geld"] += betrag
-            bank.speichern()
-            return jsonify({"ok": True, "text": "Cheat ausgeführt", "geld": bank.daten["users"][name]["geld"], "liste": mach_liste(name)})
+    return jsonify({"ok": False})
 
-    elif befehl == "spielen":
-        spiel = req.get('spielArt')
-        einsatz = int(req.get('einsatz'))
-        konto = bank.daten["users"][name]["geld"]
+@app.route('/api/game/roulette', methods=['POST'])
+def roulette():
+    name = request.json.get("name")
+    bet_amount = int(request.json.get("bet", 0))
+    bet_type = request.json.get("type") # 'number', 'color', 'dozen'
+    bet_value = request.json.get("value") # 'red', 'black', '1-12', number 0-36
 
-        if konto < einsatz:
-            return jsonify({"ok": True, "text": "Nicht genug Geld! Geh arbeiten!", "geld": konto, "liste": mach_liste(name)})
+    user = db.get_user(name)
+    if not user or user["geld"] < bet_amount or bet_amount <= 0:
+        return jsonify({"ok": False, "msg": "Ungültiger Einsatz."})
 
-        bank.daten["users"][name]["geld"] -= einsatz
-        gewinn = 0
-        msg = ""
+    user["geld"] -= bet_amount
 
-        if spiel == "muenze":
-            tipp = req.get('tipp') # Kopf oder Zahl
-            wurf = random.choice(["Kopf", "Zahl"])
-            if tipp == wurf:
-                gewinn = einsatz * 2
-                msg = f"Gewonnen! Es war {wurf}."
-            else:
-                msg = f"Verloren! Es war {wurf}."
+    # Spin
+    result = random.randint(0, 36)
 
-        elif spiel == "zahl":
-            tipp = int(req.get('tipp'))
-            zahl = random.randint(1, 5)
-            if tipp == zahl:
-                gewinn = einsatz * 5
-                msg = f"TREFFER! Zahl war {zahl}."
-            else:
-                msg = f"Daneben. Zahl war {zahl}."
+    # Colors
+    red_nums = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+    color = "green"
+    if result in red_nums: color = "red"
+    elif result != 0: color = "black"
 
-        elif spiel == "slots":
-            symbole = ["🍒", "🍋", "💎", "7️⃣"]
-            walzen = [random.choice(symbole) for _ in range(3)]
-            msg = f"[{walzen[0]}] [{walzen[1]}] [{walzen[2]}] "
+    winnings = 0
+    won = False
 
-            if walzen[0] == walzen[1] == walzen[2]:
-                if walzen[0] == "7️⃣":
-                    gewinn = einsatz * 50 # JACKPOT
-                    msg += " JACKPOT!!!"
-                else:
-                    gewinn = einsatz * 10
-                    msg += " Gewonnen!"
-            elif walzen[0] == walzen[1] or walzen[1] == walzen[2]:
-                gewinn = int(einsatz * 1.5)
-                msg += " Kleiner Gewinn."
-            else:
-                msg += " Nichts."
+    if bet_type == "number":
+        if int(bet_value) == result:
+            winnings = bet_amount * 35
+            won = True
+    elif bet_type == "color":
+        if bet_value == color:
+            winnings = bet_amount * 2
+            won = True
+    elif bet_type == "dozen":
+        # 1-12, 13-24, 25-36
+        if bet_value == "1-12" and 1 <= result <= 12: won = True
+        elif bet_value == "13-24" and 13 <= result <= 24: won = True
+        elif bet_value == "25-36" and 25 <= result <= 36: won = True
 
-        bank.daten["users"][name]["geld"] += gewinn
-        bank.speichern()
+        if won: winnings = bet_amount * 3
 
-        return jsonify({"ok": True, "text": msg, "geld": bank.daten["users"][name]["geld"], "liste": mach_liste(name)})
+    if won:
+        user["geld"] += winnings
+        msg = f"Gewonnen! Zahl war {result} ({color})."
+    else:
+        msg = f"Verloren. Zahl war {result} ({color})."
+
+    db.save()
+    return jsonify({"ok": True, "result": result, "color": color, "winnings": winnings, "msg": msg})
+
+@app.route('/api/game/crash', methods=['POST'])
+def crash():
+    name = request.json.get("name")
+    action = request.json.get("action") # 'start', 'cashout'
+    user = db.get_user(name)
+
+    if not user: return jsonify({"ok": False})
+
+    if action == "start":
+        bet = int(request.json.get("bet", 0))
+        if bet <= 0 or user["geld"] < bet:
+             return jsonify({"ok": False, "msg": "Geldproblem."})
+
+        user["geld"] -= bet
+
+        # Calculate crash point
+        # Distribution: 5% @ 1.00x, heavy tail
+        # simple algo: multiplier = 0.99 / (1 - U) ... if U is [0,1)
+        u = random.random()
+        crash_point = max(1.0, 0.96 / (1.0 - u))
+        crash_point = min(crash_point, 100.0) # Cap at 100x
+
+        # We need to store when game started to prevent "time travel" cheating
+        user["crash"] = {
+            "bet": bet,
+            "crash_point": crash_point,
+            "start_time": time.time()
+        }
+        db.save()
+
+        # Client doesn't know crash_point
+        return jsonify({"ok": True, "start_time": user["crash"]["start_time"]})
+
+    elif action == "cashout":
+        if not user.get("crash"): return jsonify({"ok": False, "msg": "Kein Spiel."})
+
+        game = user["crash"]
+        claimed_mult = float(request.json.get("multiplier", 1.0))
+
+        # Validate time roughly (allow some latency buffer)
+        # Assuming linear growth speed or exp growth.
+        # Let's say frontend grows multiplier: M = 1 + 0.3 * t  (linear for simplicity)
+        # Or exponential M = e^(0.1 * t)
+        # We'll trust the claimed_mult IF it is <= crash_point.
+        # The frontend animation "stops" at crash_point.
+        # If user claims > crash_point, they busted.
+
+        actual_crash = game["crash_point"]
+
+        if claimed_mult > actual_crash:
+            # BUST (should happen if user didn't click in time, but maybe lag)
+            user["crash"] = None
+            db.save()
+            return jsonify({"ok": True, "win": False, "crash_point": actual_crash, "msg": f"Crashed @ {actual_crash:.2f}x"})
+
+        # Win
+        winnings = int(game["bet"] * claimed_mult)
+        user["geld"] += winnings
+        user["crash"] = None
+        db.save()
+        return jsonify({"ok": True, "win": True, "crash_point": actual_crash, "winnings": winnings, "msg": f"Cashout @ {claimed_mult:.2f}x"})
+
+    return jsonify({"ok": False})
+
+@app.route('/api/game/crash/result', methods=['POST'])
+def crash_result():
+    # Only called if client animation finishes and user didn't cash out
+    name = request.json.get("name")
+    user = db.get_user(name)
+    if user and user.get("crash"):
+        cp = user["crash"]["crash_point"]
+        user["crash"] = None
+        db.save()
+        return jsonify({"ok": True, "crash_point": cp})
+    return jsonify({"ok": False})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
