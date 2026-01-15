@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<body style="background-color: darkslategray; color: white; font-family: Arial;">
+
+<center>
+    <h1 style="color: gold; text-shadow: 2px 2px red;">$$$ SCHUL CASINO $$$</h1>
+    <marquee style="background: black; color: lime;">+++ Erst arbeiten, dann zocken +++ Jackpot bei 7-7-7 +++</marquee>
+    <br><br>
+
+    <div id="loginBox" style="background: white; color: black; width: 300px; padding: 20px; border: 5px solid gold;">
+        <h3>Anmeldung</h3>
+        Name: <input type="text" id="name"><br><br>
+        Passwort: <input type="password" id="pw"><br><br>
+        <button onclick="auth('neu')">Neu Registrieren</button>
+        <button onclick="auth('login')" style="background: orange; font-weight: bold;">Einloggen</button>
+        <p id="msgLogin" style="color: red;"></p>
+    </div>
+
+    <div id="gameBox" style="display: none; width: 600px;">
+        <h2>Hallo <span id="myName" style="color: gold;"></span>!</h2>
+        <div style="background: black; padding: 10px; font-size: 24px; border: 2px solid white;">
+            Guthaben: <span id="myMoney" style="color: lime;">0</span> €
+        </div>
+        <p id="gameMsg" style="background: yellow; color: red; font-weight: bold; font-size: 18px;"></p>
+
+        <fieldset style="border: 3px solid white; background: #444;">
+            <legend>Job Center</legend>
+            <button onclick="arbeiten()" style="width: 200px; height: 50px; font-size: 18px; cursor: pointer;">
+                🔨 Steine schleppen<br>(+10 bis 20 €)
+            </button>
+        </fieldset>
+        <br>
+
+        <fieldset style="border: 3px solid gold; background: #220;">
+            <legend style="color: gold;">CASINO AREA</legend>
+            
+            <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
+                <b>Münzwurf (Einsatz: 10€ -> Gewinn: 20€)</b><br>
+                <button onclick="spielen('muenze', 10, 'Kopf')">Auf KOPF setzen</button>
+                <button onclick="spielen('muenze', 10, 'Zahl')">Auf ZAHL setzen</button>
+            </div>
+
+            <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
+                <b>Zahl 1-5 raten (Einsatz: 20€ -> Gewinn: 100€)</b><br>
+                <input type="number" id="rateZahl" style="width: 40px;">
+                <button onclick="spielen('zahl', 20, document.getElementById('rateZahl').value)">RATEN</button>
+            </div>
+
+            <div style="border: 1px solid gray; margin: 5px; padding: 5px; background: #333;">
+                <b>🎰 SLOTS (Einsatz: 50€ -> JACKPOT) 🎰</b><br>
+                <button onclick="spielen('slots', 50, null)" style="background: gold; color: black; font-weight: bold;">SPIN DRÜCKEN</button>
+            </div>
+        </fieldset>
+
+        <div id="adminPanel" style="display: none; background: red; padding: 10px; margin-top: 20px;">
+            <h3>ADMIN CHEAT</h3>
+            An: <input id="zielUser"> Betrag: <input id="cheatBetrag" type="number">
+            <button onclick="cheat()">Senden</button>
+        </div>
+
+        <br>
+        <div style="background: white; color: black; padding: 10px;">
+            <b>Highscore:</b>
+            <div id="liste" style="font-size: 12px; text-align: left;"></div>
+        </div>
+        <br>
+        <button onclick="location.reload()">Ausloggen</button>
+    </div>
+</center>
+
+<script>
+    let uName = "";
+    let uPw = "";
+
+    async function req(data) {
+        data.name = uName || document.getElementById("name").value;
+        data.pw = uPw || document.getElementById("pw").value;
+        
+        let r = await fetch("/aktion", {
+            method: "POST", 
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+        return await r.json();
+    }
+
+    async function auth(typ) {
+        let res = await req({befehl: typ});
+        if (res.text) document.getElementById("msgLogin").innerText = res.text;
+        
+        if (res.ok) {
+            uName = document.getElementById("name").value;
+            uPw = document.getElementById("pw").value;
+            
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("gameBox").style.display = "block";
+            document.getElementById("myName").innerText = uName;
+            updateUI(res);
+
+            if (uName === "Admin") document.getElementById("adminPanel").style.display = "block";
+        }
+    }
+
+    async function arbeiten() {
+        let res = await req({befehl: "arbeiten"});
+        updateUI(res);
+    }
+
+    async function spielen(art, einsatz, tipp) {
+        let res = await req({befehl: "spielen", spielArt: art, einsatz: einsatz, tipp: tipp});
+        updateUI(res);
+    }
+
+    async function cheat() {
+        let z = document.getElementById("zielUser").value;
+        let b = document.getElementById("cheatBetrag").value;
+        let res = await req({befehl: "cheat", ziel: z, betrag: b});
+        updateUI(res);
+    }
+
+    function updateUI(data) {
+        document.getElementById("myMoney").innerText = data.geld;
+        document.getElementById("liste").innerHTML = data.liste;
+        if(data.text) document.getElementById("gameMsg").innerText = data.text;
+    }
+</script>
+
+</body>
+</html>
